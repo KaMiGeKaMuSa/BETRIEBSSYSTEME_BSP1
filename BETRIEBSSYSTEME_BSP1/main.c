@@ -45,11 +45,20 @@
  * ------------------------------------------------------------- functions --
  */
 
-// 13.02.16 (gertsch) : Vorgegeben sind 2 Grundfunktionen
-//do_file und do_dir
+/// Vorgegeben sind 2 Grundfunktionen
+///do_file und do_dir
 
 int do_file(const char * file_name, const char * const * parms);
 int do_dir(const char * dir_name, const char * const * parms);
+
+
+
+///Functions for HELP
+int check_params(int argc, const char * argv[]);
+void view_help(void);
+
+
+
 
 /*
  * ------------------------------------------------------------- main --
@@ -58,12 +67,47 @@ int do_dir(const char * dir_name, const char * const * parms);
 int main(int argc, const char * argv[]) {
    
     
+    check_params(argc,argv);
     
     
     
-    
-    printf("Hello, World!\n");
     return 0;
+}
+
+
+int check_params(int argc, const char * argv[])
+{
+    
+    int i;
+    
+    printf("\nDie Anzahl der Parameter sind: %d\n", argc);
+    printf("\nDas Programm heisst: %s\n", argv[0]);
+    
+   
+    if(argc > 1)
+    {
+        for (i = 1; i < argc; i++)
+        {
+        
+            printf("\nParam %d =  %s\n", i, argv[i]);
+        
+        }
+    }
+    else
+    {
+        printf("\nKEINE PARAMETER EINGEGEBEN\n");
+        view_help();
+    }
+    
+    return 0;
+    
+}
+
+void view_help(void)
+{
+
+    printf("\n\n VIEW HELP VIEW HELP VIEW HELP VIEW HELP VIEW HELP\n\n");
+    
 }
 
 

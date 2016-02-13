@@ -48,10 +48,12 @@
 // 13.02.16 (gertsch) : Vorgegeben sind 2 Grundfunktionen
 //do_file und do_dir
 
-do_file(const char * file_name, const char * const * parms);
-do_dir(const char * dir_name, const char * const * parms);
+int do_file(const char * file_name, const char * const * parms);
+int do_dir(const char * dir_name, const char * const * parms);
 
-
+/*
+ * ------------------------------------------------------------- main --
+ */
 
 int main(int argc, const char * argv[]) {
    

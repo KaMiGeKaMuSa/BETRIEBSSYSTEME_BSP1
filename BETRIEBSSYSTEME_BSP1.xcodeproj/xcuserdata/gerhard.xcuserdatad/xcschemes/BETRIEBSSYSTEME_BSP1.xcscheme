@@ -61,6 +61,12 @@
             ReferencedContainer = "container:BETRIEBSSYSTEME_BSP1.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
+      <CommandLineArguments>
+         <CommandLineArgument
+            argument = ". -name &quot;*.c&quot; -ls -type HALLO_DU_NUSS"
+            isEnabled = "YES">
+         </CommandLineArgument>
+      </CommandLineArguments>
       <AdditionalOptions>
       </AdditionalOptions>
    </LaunchAction>

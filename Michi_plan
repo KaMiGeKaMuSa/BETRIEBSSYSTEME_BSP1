@@ -1,19 +1,21 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <string.h>
 
-void do_file(const char * file_name, const char * parms);
-void do_dir(const char * dir_name, const char * const * parms);
+void do_file(const char * file_name, const char * parms, int parms_length);
+void do_dir(const char * dir_name, const char * parms, int parms_length);
 int isDirectory(const char *path);
+void check_print(const char * file_name, const char * parms, int parms_length);
 
 int main(int argc, char *argv[])
 {
     if (argc > 1){
 		// Check ob directory oder anderes(file)
 		if (isDirectory(argv[1]) == 1)
-			do_dir(argv[1], argv[2]);
+			do_dir(argv[1], argv[2], argc);
 		else
-			do_file(argv[1], argv[2]);
+			do_file(argv[1], argv[2], argc);
     }
 	else{
 		printf("FIND: Parameterfomat false");
@@ -22,7 +24,7 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-void do_file(const char * file_name, const char * parms){
+void do_file(const char * file_name, const char * parms, int parms_length){
     // File auf alle Parameter überprüfen und ausgeben wenn nötig =>
 	// Schleife for(int i = 0; i < parms.length; i++)
 	// if (parms[i] == aktion1){ } else if (parms[i] == aktion2) {}.....
@@ -30,18 +32,20 @@ void do_file(const char * file_name, const char * parms){
 	// Wenn eine aktion/filter nicht mit dem file übereinstimmt dann setze Flag isValid auf 0 (false) und Schleife über die restlichen Parameter kann abgebrochen werden
 	// Nachdem Schleife alle Parameter für das File überprüft hat check Flag isValid und printf wenn true
 	
-	printf("Filename: %s, parms: %s\n", file_name, parms);
+	
+		check_print(file_name, parms,parms_length);
+	
     
 	
 }
 
-void do_dir(const char * dir_name, const char * const * parms){
+void do_dir(const char * dir_name, const char * parms, int parms_length){
     // Schleife über alle Elemente des dir_name
 	// . und .. überspringen da sonst Endlosschleife
 	// check ob nächstes Element dir oder was anderes ist (isDirectory)
 	// wenn was anderes rufe do_file auf || wenn dir rufe do_dir mit dem derzeitigen Element + counter um die Tiefe des Directorys zu wissen	
-	if (isDirectory(file_name) == 0){
-        do_file(file_name, parms);
+	if (isDirectory(dir_name) == 0){
+        do_file(dir_name, parms,parms_length);
     }
 }
 
@@ -50,4 +54,17 @@ int isDirectory(const char *path) {
    if (stat(path, &statbuf) != 0)
        return 0;
    return S_ISDIR(statbuf.st_mode);
+}
+
+void check_print(const char * file_name, const char * parms, int parms_length){
+	for (int i = 0; i < parms_length-2; i++){
+		
+		printf("Filename: %s, parms: %s\n", file_name, parms);
+		
+		if (strcmp(&parms[i], "-print") == 0){
+				printf("%s\n", file_name);
+		}else{
+			printf("CHECK_PRINT: unknown parameter\n");
+		}
+	}
 }

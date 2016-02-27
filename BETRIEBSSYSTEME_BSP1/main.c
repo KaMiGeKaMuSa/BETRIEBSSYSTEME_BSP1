@@ -4,7 +4,7 @@
  * Beispiel 1
  *
  * @author Karin Kalman <karin.kalman@technikum-wien.at>
- * @author Michael Muellner <michael.muellner@technikum-wien.at>
+ * @author Michael Mueller <michael.mueller@technikum-wien.at>
  * @author Gerhard Sabeditsch <gerhard.sabeditsch@technikum-wien.at>
  * @date 2016/02/13
  *
@@ -13,7 +13,7 @@
  *
  * URL: $HeadURL$
  *
- * Last Modified: $Author: Gerhard $
+ * Last Modified: $Author: Michael $
  */
 
 /*
@@ -65,16 +65,15 @@ const char * allowed_params[]={"-h","-name","-type", "-user", "-print", "-ls", "
 /// Vorgegeben sind 2 Grundfunktionen
 ///do_file und do_dir
 
-int do_file(const char * file_name, const char * const * parms); // NOT YET MADE
-int do_dir(const char * dir_name, const char * const * parms);   // NOT YET MADE
+void do_file(const char * file_name, const char * parms, int parms_length);
+void do_dir(const char * dir_name, const char * parms, int parms_length);
+void check_print(const char * file_name, const char * parms, int parms_length);
 
 
 ///Functions for HELP
 int check_params(int argc, const char * argv[]);
 int check_param_options(const char * argv[], int param_index);
 int which_location(const char *locationName);
-
-
 void view_help(void);
 
 
@@ -85,16 +84,74 @@ void view_help(void);
  */
 
 int main(int argc, const char * argv[]) {
-   
-    
-    check_params(argc,argv);
-    
+
+    if (argc > 1){
+		// Check ob directory oder anderes file
+		if (which_location(argv[1]) == 2)
+			do_dir(argv[1], argv[2], argc);
+		else
+			do_file(argv[1], argv[2], argc);
+    }
+	else{
+		printf("FIND: Parameterfomat false");
+	}
     
     
     return 0;
 }
 
+// MM:
+void do_file(const char * file_name, const char * parms, int parms_length){
+    // File auf alle Parameter überprüfen und ausgeben wenn nötig =>
+	// Schleife for(int i = 0; i < parms.length; i++)
+	// if (parms[i] == aktion1){ } else if (parms[i] == aktion2) {}.....
+	// Wenn aktion einen zweiten Parameter braucht z.B. -user	<name> dann muss i=i+1 am schluß damit <name> nicht als eigene aktion ausgewertet wird
+	// Wenn eine aktion/filter nicht mit dem file übereinstimmt dann setze Flag isValid auf 0 (false) und Schleife über die restlichen Parameter kann abgebrochen werden
+	// Nachdem Schleife alle Parameter für das File überprüft hat check Flag isValid und printf wenn true
+		check_print(file_name, parms,parms_length);
 
+}
+
+//MM:
+void do_dir(const char * dir_name, const char * parms, int parms_length){
+    // Schleife über alle Elemente des dir_name
+	// . und .. überspringen da sonst Endlosschleife
+	// check ob nächstes Element dir oder was anderes ist (isDirectory)
+	// wenn was anderes rufe do_file auf || wenn dir rufe do_dir mit dem derzeitigen Element + counter um die Tiefe des Directorys zu wissen	
+	DIR * dir_object;
+	struct dirent * dir_element;
+	
+	if ((dir_object = opendir(dir_name)) == NULL) {
+        printf("Directory open failed: %s\n", dir_name);
+        return;
+    }
+	
+	while ((dir_element = readdir(dir_object)) && dir_element) {
+		if (strcmp(dir_element->d_name, ".") == 0) continue; // dont process . Directory -> endless loop 
+        if (strcmp(dir_element->d_name, "..") == 0) continue; // dont process .. directory
+		
+		//printf("location: %s, type: %d\n", dir_element->d_name, which_location(dir_element->d_name));
+		if (which_location(dir_element->d_name) == 1){
+			do_file(dir_element->d_name, parms,parms_length);
+		}
+	}
+	
+	 closedir(dir_object);
+}
+
+// MM:
+void check_print(const char * file_name, const char * parms, int parms_length){
+	for (int i = 0; i < parms_length-2; i++){
+		
+		//printf("Filename: %s, parms: %s\n", file_name, parms);
+		
+		if (strcmp(&parms[i], "-print") == 0){
+				printf("%s\n", file_name);
+		}else{
+			printf("CHECK_PRINT: unknown parameter\n");
+		}
+	}
+}
 
 /**
  * check_params()
@@ -258,32 +315,20 @@ int check_params(int argc, const char * argv[])
  */
 int which_location(const char *locationName)
 {
-    FILE * fp;
-    
     struct stat which_entry;
-    
-    //opens up file pointer readable
-    fp = fopen(locationName, "r");
-    
-    if (fp == NULL)
-    {
-        fprintf(stderr,"Error file_o_dir() fopen()");
-        return -1;
-    }
-    
     
     //int stat(const char *path, struct stat *buf);
     stat(locationName, &which_entry);
     
     //check which location it is
-    if(S_ISREG(which_entry.st_mode)){        (void) fclose(fp);      return 1;}  //"ordinary file"
-    else if(S_ISDIR(which_entry.st_mode)){   (void) fclose(fp);      return 2;}  //"directory"
-    else if(S_ISCHR(which_entry.st_mode)){   (void) fclose(fp);      return 3;}  //"text orientated DEVICE"
-    else if(S_ISBLK(which_entry.st_mode)){   (void) fclose(fp);      return 4;}  //"block orientated DEVICE"
-    else if(S_ISFIFO(which_entry.st_mode)){  (void) fclose(fp);      return 5;}  //"pipe"
-    else if(S_ISLNK(which_entry.st_mode)){   (void) fclose(fp);      return 6;}  //"symbolic link";
-    else if(S_ISSOCK(which_entry.st_mode)){  (void) fclose(fp);      return 7;}  //"socket"
-    else{                                    (void) fclose(fp);      return -1;} //"undef"
+    if(S_ISREG(which_entry.st_mode)){        return 1;}  //"ordinary file"
+    else if(S_ISDIR(which_entry.st_mode)){   return 2;}  //"directory"
+    else if(S_ISCHR(which_entry.st_mode)){   return 3;}  //"text orientated DEVICE"
+    else if(S_ISBLK(which_entry.st_mode)){   return 4;}  //"block orientated DEVICE"
+    else if(S_ISFIFO(which_entry.st_mode)){  return 5;}  //"pipe"
+    else if(S_ISLNK(which_entry.st_mode)){   return 6;}  //"symbolic link";
+    //else if(S_ISSOCK(which_entry.st_mode)){  (void) fclose(fp);      return 7;}  //"socket"
+    else{                                    return -1;} //"undef"
     
 }
 

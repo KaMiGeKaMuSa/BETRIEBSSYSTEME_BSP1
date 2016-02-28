@@ -65,9 +65,14 @@ const char * allowed_params[]={"-h","-name","-type", "-user", "-print", "-ls", "
 /// Vorgegeben sind 2 Grundfunktionen
 ///do_file und do_dir
 
+<<<<<<< Updated upstream
 void do_file(const char * file_name, const char * parms, int parms_length);
 void do_dir(const char * dir_name, const char * parms, int parms_length);
 void check_print(const char * file_name, const char * parms, int parms_length);
+=======
+int do_file(const char * file_name, const char * const * parms);
+int do_dir(const char * dir_name, const char * const * parms);   // NOT YET MADE
+>>>>>>> Stashed changes
 
 
 ///Functions for HELP
@@ -82,6 +87,38 @@ void view_help(void);
 /*
  * ------------------------------------------------------------- main --
  */
+
+
+char * next_param (const char * argv[],char * activ_param)
+{
+    
+    
+    
+    // NEXT PARAM RETURNEN / ÜBERGEBEN
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+
+    return NULL;
+    
+}
+
+
+
+
+
+
+
+
+
 
 int main(int argc, const char * argv[]) {
 
@@ -152,6 +189,9 @@ void check_print(const char * file_name, const char * parms, int parms_length){
 		}
 	}
 }
+
+
+
 
 /**
  * check_params()
@@ -333,7 +373,7 @@ int which_location(const char *locationName)
 }
 
 /**
- *check_param_options()
+ *check_param_options(PARAMETER IT SELF,INDEX_OF_THE_PARAM)
  *
  * Returns 0 = everything OK
  * Returns 1 = param_option not allowed
@@ -461,6 +501,57 @@ int check_param_options(const char * argv[], int param_index)
 }
 
 
+/**------------------------------------------------------------------
+ *
+ *------------do_file()
+ *
+ *
+ * Returns 0 = everything OK
+ * Returns -1 = fail
+ *
+ *
+ **/
+
+
+
+int do_file(const char * file_name, const char * const * parms)
+{
+    
+    int what_is_it = 100;
+    
+    what_is_it = which_location(file_name);
+    
+    
+    //Error Handling which_location(), when it is undef or can't open file
+    if (what_is_it == -1)
+    {
+        return -1;
+    }
+    
+    
+    //Switch to the funktion do_dir if required
+    if (what_is_it == 2)
+    {
+        do_dir(file_name, parms);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    //Everything OK -> Returns 0
+    return 0;
+}
+
+
 
 
 
@@ -478,6 +569,8 @@ void view_help(void)
     printf("\n-path                                                             \n");
     
 }
+
+
 
 
 

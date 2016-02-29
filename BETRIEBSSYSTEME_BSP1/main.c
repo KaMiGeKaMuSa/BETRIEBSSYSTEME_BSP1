@@ -64,7 +64,7 @@ typedef struct param_stack {
 param_stack * param_list = NULL;
 int stack_count = 0;
 
-const char * allowed_params[]={"-name","-type", "-user", "-print", "-ls", "-nouser", "-path"};
+const char * allowed_params[]={"-name","-type", "-user", "-print", "-ls", "-nouser", "-path", NULL};
 
 
 
@@ -195,6 +195,10 @@ void do_dir(const char * dir_name, const char * parms, int parms_length){
 
 // MM:
 void check_print(const char * file_name, const char * parms, int parms_length){
+	
+	// for schleife über stack
+	// check derzeitiges element vom stack (param_list->s_parameter) auf derzeitiges element (file_name)
+	// wenn stack ist gleich null 
 	
     //GS: Question to MM :: WHY parms_length-2 and why start for() with i=ZERO  == ZERO == Name of Programm
     for (int i = 0; i < parms_length-2; i++){
@@ -415,7 +419,7 @@ int check_param_options(const char * argv[], int aktiv_param_index)
         
         int numb_of_allowed_options=0;
         int i=0;
-        char * allowed_options[]={"b","c","d","p","f","l","s"};
+        char * allowed_options[]={"b","c","d","p","f","l","s", NULL};
         
 
         //check if next argv is a param -> if so, then it's not allowed by this OPTION

@@ -3,7 +3,7 @@ Wir sollen ein eigenes find() programmieren -> myfind() <br/>
 Mit folgenden Optionen: <br/>
 -USER: Gerhard <br/>
 -NAME: Karin <br/>
--PATH: Karin <br/>
+-PATH: Michi <br/>
 -TYPE: Gerhard<br/>
 -ls: Michi <br/>
--nouser: Michi <br/>
+-nouser: Karin <br/>

@@ -61,14 +61,10 @@ typedef struct param_stack {
 }param_stack;
 
 
-param_stack * param_list;
-
+param_stack * param_list = NULL;
+int stack_count = 0;
 
 const char * allowed_params[]={"-name","-type", "-user", "-print", "-ls", "-nouser", "-path"};
-
-
-
-
 
 
 
@@ -108,10 +104,11 @@ void pop();
 int main(int argc, const char * argv[]) {
     
     
-    //check_params(argc, argv);
+    check_params(argc, argv);
+    
     
     //Check if params are given
-    
+    /*
     if (argc > 1){
 		// if directory then go to do_dir
         if (which_location(argv[1]) == 2) {
@@ -129,7 +126,7 @@ int main(int argc, const char * argv[]) {
         fprintf(stderr, "myfind(): Error: parameter format false\n");
 
 	}
-    
+    */
     
     return 0;
 }
@@ -400,24 +397,10 @@ int check_param_options(const char * argv[], int aktiv_param_index)
     //-------------------------------------------------------------------------------------------NAME_PARAM
     if (strcmp(allowed_params[NAME_PARAM], argv[aktiv_param_index]) == 0)
     {
-        //check if next argv is a param -> if so, then it's not allowed by this OPTION
-        if (strncmp("-", argv[aktiv_option] , 1) == 0)
-        {
-            //Returns 1 = param_option not OK
-            return 1;
-        }
-        else {
-            
-            
+        
             //Push to PARAM_LIST
             push(argv[aktiv_param_index], argv[aktiv_option]);
-         
-       
-        }
-    
-   
-        
-        
+
         
         // Everything is allowed ? <pattern>
         //{
@@ -555,20 +538,23 @@ int check_param_options(const char * argv[], int aktiv_param_index)
 void push(const char * param,const char * option)
 {
 
-    param_stack new;
-    new.s_parameter = param;
-    new.s_option = option;
-    new.s_next_param = NULL;
+    param_stack * new = malloc(sizeof( param_stack));
+    new->s_parameter = param;
+    new->s_option = option;
+    new->s_next_param = NULL;
     
     if(param_list == NULL){
-    param_list = &new;
+    param_list = new;
+    stack_count++;
+    
     }
     else{
     
         param_stack * help = search_empty(param_list);
         
-        help = &new;
-
+        help->s_next_param = new;
+        
+        stack_count++;
 
     }
     
@@ -605,6 +591,8 @@ void pop ()
     param_list = param_list->s_next_param;
     
     free (help);
+    
+    stack_count--;
     
 }
 

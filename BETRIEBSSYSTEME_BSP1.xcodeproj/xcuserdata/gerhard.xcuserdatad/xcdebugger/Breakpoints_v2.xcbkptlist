@@ -10,12 +10,28 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "BETRIEBSSYSTEME_BSP1/main.c"
-            timestampString = "478459425.132657"
+            timestampString = "478990414.055236"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "130"
-            endingLineNumber = "130"
-            landmarkName = "main()"
+            startingLineNumber = "305"
+            endingLineNumber = "305"
+            landmarkName = "check_params()"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "BETRIEBSSYSTEME_BSP1/main.c"
+            timestampString = "478992095.4525"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "490"
+            endingLineNumber = "490"
+            landmarkName = "check_param_options()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

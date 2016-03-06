@@ -63,7 +63,7 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = ".  -name &quot;*.c&quot; -type d -print"
+            argument = ". -name &quot;*.c&quot; -type s -nouser -type f -ls -path"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

@@ -52,6 +52,10 @@
  * ------------------------------------------------------------- global --
  */
 
+
+ // ----------------------- STACK -- START
+
+
 typedef struct param_stack {
     
     const char * s_parameter;
@@ -63,6 +67,9 @@ typedef struct param_stack {
 
 param_stack * param_list = NULL;
 int stack_count = 0;
+
+// ----------------------- STACK -- END
+
 
 const char * allowed_params[]={"-name","-type", "-user", "-print", "-ls", "-nouser", "-path", NULL};
 
@@ -92,8 +99,8 @@ void view_help(void);
 
 
 param_stack * search_empty (param_stack * param_list);
-void push(const char * param,const char * option);
-void pop();
+int push(const char * param,const char * option);
+int pop();
 
 
 /*
@@ -103,9 +110,10 @@ void pop();
 
 int main(int argc, const char * argv[]) {
     
+    //check params and if something went wrong exit state 1;
+    if (check_params(argc, argv) != 0) return 1;
     
-    check_params(argc, argv);
-    
+    //if ( pop() != 0) return 1;
     
     //Check if params are given
     /*
@@ -289,6 +297,18 @@ int check_params(int argc, const char * argv[])
         for (i = 2; i < argc; i++)
         {
             
+            if ((strncmp("-", argv[i] , 1) != 0 ) && stack_count == 0)
+            {
+            
+                //Errorhandling corrected -- no errno is used because there is no errno code for this
+                fprintf(stderr, "myfind() - check_params(): Error: unknown parameter %s -- only one dir/file allowed by myfind\n",argv[i]);
+                
+                view_help();
+                
+                return 5;
+            }
+            
+            
             //Check if it's a PARAM
             if (strncmp("-", argv[i] , 1) == 0)
             {
@@ -296,17 +316,20 @@ int check_params(int argc, const char * argv[])
                     //for() as log as allowed params found
                     //numb_of_allowed_params - 1 -> because array starts with ZERO
                     //ii = 1 because PARAM HELP should not listed behind
-                    for (ii=0; ii <= numb_of_allowed_params; ii++)
+                    for (ii=0; ii < numb_of_allowed_params; ii++)
                     {
             
                         //if in one loop a ALLOWED PARAM is found, then check OK
-                        if (strncmp(allowed_params[ii], argv[i] , strlen(argv[i])) == 0){
+                        if (strcmp(allowed_params[ii], argv[i] ) == 0){
                         
                        
                                 /// Check OPTIONS--------------------------------------------------------------
                                 //int check_param_options(const char * argv[], int aktiv_param_index)
-                            if (check_param_options(argv,i) != 0)
+                                if (check_param_options(argv,i) != 0)
                                 {
+                                
+                                //PRINT OUT IS DONE IN check_param_options()
+                                    
                                 //* Returns 5 = not allowed option found
                                 return 5;
                                 }
@@ -322,6 +345,12 @@ int check_params(int argc, const char * argv[])
                 
                     if (params_ok != YES)
                     {
+                        
+                        //Errorhandling corrected -- no errno is used because there is no errno code for this
+                        fprintf(stderr, "\nmyfind() - check_params(): Error: not allowed parameter %s\n",argv[i]);
+                        
+                        view_help();
+                        
                         //Returns 4 = not allowed parameter found
                         return 4;
                     }
@@ -343,8 +372,11 @@ int check_params(int argc, const char * argv[])
     }
     else
     {
-        printf("\ncheck_params() no parameters found\n");
+        //Errorhandling corrected -- no errno is used because there is no errno code for this
+        fprintf(stderr, "\nmyfind() - check_params(): Error: no params are found\n");
+        
         view_help();
+        
         //Returns 3 = no parameter given
         return 3;
     }
@@ -362,9 +394,9 @@ int check_params(int argc, const char * argv[])
  *  return 4  -->   "block oriented DEVICE"
  *  return 5  -->   "pipe"
  *  return 6  -->   "symbolic link";
- *  return 7  -->   "socket"
+ *  return 7  -->   "socket"        //NOT INCLUDED ANYMORE
  *  return -1 -->   "undef"
- *  return -1 -->   "fail to open"
+ *  return -1 -->   "fail to open" //NOT INCLUDED ANYMORE
  */
 int which_location(const char *locationName)
 {
@@ -392,23 +424,25 @@ int which_location(const char *locationName)
  *
  * Returns 0 = everything OK
  * Returns 1 = param_option not allowed
+ * Returns 2 = push() failed
  */
 int check_param_options(const char * argv[], int aktiv_param_index)
 {
     //help var to make code better
     int aktiv_option = aktiv_param_index +1;
+    int help =0;
     
     //-------------------------------------------------------------------------------------------NAME_PARAM
     if (strcmp(allowed_params[NAME_PARAM], argv[aktiv_param_index]) == 0)
     {
         
-            //Push to PARAM_LIST
-            push(argv[aktiv_param_index], argv[aktiv_option]);
-
+            //Push to PARAM_LIST and check if push() work well
+            if (push(argv[aktiv_param_index], argv[aktiv_option]) != 0)
+            {
+                //Returns 2 = push() failed
+                return 2;
+            }
         
-        // Everything is allowed ? <pattern>
-        //{
-        //}
         
 
     }
@@ -425,6 +459,12 @@ int check_param_options(const char * argv[], int aktiv_param_index)
         //check if next argv is a param -> if so, then it's not allowed by this OPTION
         if (strncmp("-", argv[aktiv_option] , 1) == 0)
         {
+  
+            //Errorhandling corrected -- no errno is used because there is no errno code for this
+            fprintf(stderr, "\nmyfind() - check_param_options(): parameter %s option %s not exist\n", argv[aktiv_param_index], argv[aktiv_option]);
+            
+            view_help();
+            
             //Returns 1 = param_option not OK
             return 1;
         }
@@ -444,24 +484,50 @@ int check_param_options(const char * argv[], int aktiv_param_index)
         {
 
             //for( i=0; i < numb_of_allowed_options; i++)
-            for( i=0; i < 6; i++)
+            for( i=0; i < numb_of_allowed_options; i++)
             {
                 
      
                 if(strcmp(argv[aktiv_option], allowed_options[i]) == 0) {
-                    //Push to PARAM_LIST
-                    push(argv[aktiv_param_index], argv[aktiv_option]);
+                    
+                    
+                    //Push to PARAM_LIST and check if push() work well
+                    if (push(argv[aktiv_param_index], argv[aktiv_option]) != 0)
+                    {
+                        //Returns 2 = push() failed
+                        return 2;
+                    }
+                
+                    help =1;
+                    
                 }
 
                 
             }
             
+            if( help != 1) {
+            //Errorhandling corrected -- no errno is used because there is no errno code for this
+            fprintf(stderr, "\nmyfind() - check_param_options(): parameter %s option %s not exist\n", argv[aktiv_param_index], argv[aktiv_option]);
+            
+            view_help();
+            
+            //Returns 1 = param_option not OK
+            return 1;
+            }
+            else {
+                help = 0; //reset help
+            }
+            
+            
         }
         else{
             
+            //Errorhandling corrected -- no errno is used because there is no errno code for this
+            fprintf(stderr, "\nmyfind() - check_param_options(): parameter %s option %s not exist\n", argv[aktiv_param_index], argv[aktiv_option]);
+            
+            view_help();
+            
             //Returns 1 = param_option not OK
-            fprintf(stderr, "myfind() check_param_options()- : Error: parameter format false\n");
-            fprintf(stderr, "myfind() check_param_options()- : %s\n",argv[aktiv_param_index + 1]);
             return 1;
         }
         
@@ -475,27 +541,37 @@ int check_param_options(const char * argv[], int aktiv_param_index)
         //check if next argv is a param -> if so, then it's not allowed by this OPTION
         if (strncmp("-", argv[aktiv_option] , 1) == 0)
         {
+            
+            //Errorhandling corrected -- no errno is used because there is no errno code for this
+            fprintf(stderr, "\nmyfind() - check_param_options(): parameter %s option %s not exist\n", argv[aktiv_param_index], argv[aktiv_option]);
+            
+            view_help();
+            
             //Returns 1 = param_option not OK
             return 1;
         }
         
-        //Push to PARAM_LIST
-        push(argv[aktiv_param_index], argv[aktiv_option]);
         
-        //Do something with argv[aktiv_param_index]  and  argv[aktiv_option]..................
+        //Push to PARAM_LIST and check if push() work well
+        if (push(argv[aktiv_param_index], argv[aktiv_option]) != 0)
+        {
+            //Returns 2 = push() failed
+            return 2;
+        }
+        
         
     }
     
     //-------------------------------------------------------------------------------------------PRINT_PARAM
     if (strcmp(allowed_params[PRINT_PARAM], argv[aktiv_param_index]) == 0)
     {
-    // After this PARAM, no OPTIONS are required
     
-        //Push to PARAM_LIST
-        push(argv[aktiv_param_index], "");
-        
-        
-    //Do something with argv[aktiv_param_index]
+        //Push to PARAM_LIST and check if push() work well
+        if (push(argv[aktiv_param_index], "") != 0)
+        {
+            //Returns 2 = push() failed
+            return 2;
+        }
     
         
     }
@@ -503,33 +579,39 @@ int check_param_options(const char * argv[], int aktiv_param_index)
     //-------------------------------------------------------------------------------------------LS_PARAM
     if (strcmp(allowed_params[LS_PARAM], argv[aktiv_param_index]) == 0)
     {
-      // After this PARAM, no OPTIONS are required
-        
-    //Do something with argv[aktiv_param_index]  and  argv[aktiv_option]..................
+    
+        //Push to PARAM_LIST and check if push() work well
+        if (push(argv[aktiv_param_index], "") != 0)
+        {
+            //Returns 2 = push() failed
+            return 2;
+        }
         
     }
     
     //-------------------------------------------------------------------------------------------NOUSER_PARAM
     if (strcmp(allowed_params[NOUSER_PARAM], argv[aktiv_param_index]) == 0)
     {
-     // After this PARAM, no OPTIONS are required
-    
-        //Push to PARAM_LIST
-        push(argv[aktiv_param_index], "");
         
-     //Do something with argv[aktiv_param_index]  and  argv[aktiv_option]..................
+        //Push to PARAM_LIST and check if push() work well
+        if (push(argv[aktiv_param_index], "") != 0)
+        {
+            //Returns 2 = push() failed
+            return 2;
+        }
         
     }
     
     //-------------------------------------------------------------------------------------------PATH_PARAM
     if (strcmp(allowed_params[PATH_PARAM], argv[aktiv_param_index]) == 0)
     {
-     // After this PARAM, no OPTIONS are required
-    
-        //Push to PARAM_LIST
-        push(argv[aktiv_param_index], "");
         
-     //Do something with argv[aktiv_param_index]  and  argv[aktiv_option]..................
+        //Push to PARAM_LIST and check if push() work well
+        if (push(argv[aktiv_param_index], "") != 0)
+        {
+            //Returns 2 = push() failed
+            return 2;
+        }
         
     }
     
@@ -539,10 +621,30 @@ int check_param_options(const char * argv[], int aktiv_param_index)
 }
 
 
-void push(const char * param,const char * option)
-{
 
+
+/**
+ *
+ * push(const char * param,const char * option)
+ *
+ * Returns 0 = everything OK
+ * Returns 1 = Malloc Error
+ * Returns 2 = Search in Stack Error
+ */
+int push(const char * param,const char * option)
+{
+    
     param_stack * new = malloc(sizeof( param_stack));
+    
+    if(new == NULL)
+    {
+        //Errorhandling corrected -- no errno is used because there is no errno code for this
+        fprintf(stderr, "\nmyfind() - push(): Error: Malloc\n");
+
+        // Returns 1 = Malloc Error
+        return 1;
+    }
+    
     new->s_parameter = param;
     new->s_option = option;
     new->s_next_param = NULL;
@@ -556,16 +658,28 @@ void push(const char * param,const char * option)
     
         param_stack * help = search_empty(param_list);
         
-        help->s_next_param = new;
+        if(help == NULL)
+        {
+
+            //Errorhandling corrected -- no errno is used because there is no errno code for this
+            fprintf(stderr, "\nmyfind() - push(): Error: Search in Stack\n");
+            
+            // Returns 2 = Search in Stack Error
+            return 2;
+        }
         
+        help->s_next_param = new;
         stack_count++;
 
     }
     
-    
+    // Returns 0 = everything OK
+    return 0;
 }
 
-
+//search_empty()
+// Returns NULL = NOT OK
+// Returns NOT NULL = OK == IF s_next_param == NULL
 param_stack * search_empty (param_stack * start)
 {
     
@@ -582,27 +696,42 @@ param_stack * search_empty (param_stack * start)
         return search_empty(start->s_next_param);
     }
     
-
     return NULL;
 }
 
 
-void pop ()
+//pop ()
+// delete the first param in Stack => now the second Param is the first
+// return 0 = Everything OK
+// return 1 = Stack is Empty, No pop allowed
+int pop ()
 {
+    
+    
+    if(stack_count == 0)
+    {
+        //Errorhandling corrected -- no errno is used because there is no errno code for this
+        fprintf(stderr, "\nmyfind() - pop(): Error: nothing in stack\n");
+        
+        return 1;
+    }
     
     param_stack * help = param_list;
     
     param_list = param_list->s_next_param;
     
     free (help);
+    help = NULL;
     
     stack_count--;
     
+    return 0;
 }
 
 
 void view_help(void)
 {
+    printf("\n###############-------------   HELP START  -------------###############");
     printf("\nmyfind <file or directory> [ <parameters> ] ...\n");
     printf("\nPARAMETERS:");
     printf("\n-user	<name>/<uid>    finde Directoryeinträge eines Users         ");
@@ -611,7 +740,9 @@ void view_help(void)
     printf("\n-print                gibt den Namen des Directoryeintrags aus    ");
     printf("\n-ls                                                               ");
     printf("\n-nouser                                                           ");
-    printf("\n-path                                                             \n");
+    printf("\n-path                                                             ");
+    printf("\n###############-------------    HELP END   -------------###############\n");
+
     
 }
 

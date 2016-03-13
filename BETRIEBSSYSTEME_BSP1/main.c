@@ -86,14 +86,15 @@ extern int errno ;
 ///do_file und do_dir
 
 
-void do_file(const char * file_name, const char * parms, int parms_length);
-void do_dir(const char * dir_name, const char * parms, int parms_length);
+void do_file(const char * file_name, const char * parms, int parms_length,const char * argv[],int check_params_return);
+void do_dir(const char * dir_name, const char * parms, int parms_length,const char * argv[], int check_params_return);
 void check_print(const char * file_name, const char * parms, int parms_length);
 
 
 ///Functions for HELP
 int check_params(int argc, const char * argv[]);
 int check_param_options(const char * argv[], int aktiv_param_index);
+int do_params(char *file_or_dir_name);
 int which_location(const char *locationName);
 void view_help(void);
 
@@ -111,48 +112,68 @@ int pop();
 int main(int argc, const char * argv[]) {
     
     //check params and if something went wrong exit state 1;
-    if (check_params(argc, argv) != 0) return 1;
+    int check_params_return = check_params(argc, argv);
     
-    //if ( pop() != 0) return 1;
+    if (check_params_return > 1) return 1;
     
-    //Check if params are given
-    /*
-    if (argc > 1){
+    
+    //TEST ---  overview about the given parameters
+    printf("\ncheck_params() number of parameters exclusive programm_itself are: %d\n", argc -1); //FOR TEST
+
+    int i;
+    for (i = 1; i < argc; i++)
+     {
+     printf("\ncheck_params() Param %d =  %s\n", i, argv[i]);
+     }
+    
+    
 		// if directory then go to do_dir
         if (which_location(argv[1]) == 2) {
-           do_dir(argv[1], argv[2], argc);
+           do_dir(argv[1], argv[2], argc, argv,check_params_return);
         }
         // if file then go to do_file
         else {
-			do_file(argv[1], argv[2], argc);
+			do_file(argv[1], argv[2], argc, argv,check_params_return);
         }
-    
-    }
-	else{
-		
-        //Errorhandling corrected -- no errno is used because there is no errno code for this
-        fprintf(stderr, "myfind(): Error: parameter format false\n");
 
-	}
-    */
     
     return 0;
 }
 
 // MM:
-void do_file(const char * file_name, const char * parms, int parms_length){
+void do_file(const char * file_name, const char * parms, int parms_length, const char * argv[], int check_params_return){
     // File auf alle Parameter überprüfen und ausgeben wenn nötig =>
 	// Schleife for(int i = 0; i < parms.length; i++)
 	// if (parms[i] == aktion1){ } else if (parms[i] == aktion2) {}.....
 	// Wenn aktion einen zweiten Parameter braucht z.B. -user	<name> dann muss i=i+1 am schluß damit <name> nicht als eigene aktion ausgewertet wird
 	// Wenn eine aktion/filter nicht mit dem file übereinstimmt dann setze Flag isValid auf 0 (false) und Schleife über die restlichen Parameter kann abgebrochen werden
 	// Nachdem Schleife alle Parameter für das File überprüft hat check Flag isValid und printf wenn true
-		check_print(file_name, parms,parms_length);
+		
+    
+    //check_print(file_name, parms,parms_length);
+    
+    
+    if (which_location(file_name) == 2){
+        do_dir(file_name, parms,parms_length,argv, check_params_return);
+    }
+    
+    
+    int help_return= do_params((char*)file_name);
+    
+
+    if (help_return == 1) { //do_params() returns 1 == print imediately because of -ls or -print
+        fprintf(stdout, "%s\n", file_name);
+    }
+
+    //When stack is empty -- default print
+    if (help_return == 3){
+        fprintf(stdout, "%s\n", file_name);
+    }
 
 }
 
 //MM:
-void do_dir(const char * dir_name, const char * parms, int parms_length){
+void do_dir(const char * dir_name, const char * parms, int parms_length,const char * argv[], int check_params_return){
     // Schleife über alle Elemente des dir_name
 	// . und .. überspringen da sonst Endlosschleife
 	// check ob nächstes Element dir oder was anderes ist (isDirectory)
@@ -172,7 +193,40 @@ void do_dir(const char * dir_name, const char * parms, int parms_length){
         return;
     }
 	
+    int save_stackcount = stack_count;
+    
 	while ((dir_element = readdir(dir_object)) && dir_element) {
+        
+        //initialise i and reset i
+        int i = 0;
+
+        
+        // IF  RETURN OF CHECK PARAM IS NOT 1 ==> * Returns 1 = no params in Stack
+        if(check_params_return != 1)
+        {
+                for(i=0;i<=save_stackcount;i++)
+                    {
+                            int help_return= do_params(dir_element->d_name);
+
+                            if (help_return == 1 ) { //do_params() returns 1 == print imediately because of -ls or -print
+                                    fprintf(stdout, " print do_dir %s\n", dir_element->d_name);
+                                }
+            
+                    }
+        
+            if(stack_count == 0)
+            {
+            check_params(parms_length, argv);
+            }
+        
+        }
+        else
+        {
+            fprintf(stdout, "%s\n", dir_element->d_name);
+        }
+        
+        
+        /*
         
         if (strcmp(dir_element->d_name, ".") == 0){
 
@@ -196,7 +250,12 @@ void do_dir(const char * dir_name, const char * parms, int parms_length){
             check_print(dir_element->d_name, parms, parms_length);
         }
         
-	}
+        
+        */
+        
+        
+    }
+	
 	
 	 closedir(dir_object);
 }
@@ -217,6 +276,12 @@ void check_print(const char * file_name, const char * parms, int parms_length){
 				printf("%s\n", file_name);
 		}
         else{
+            
+            
+            // IF OTHER PARAMS -- OK ==== > PRINT ---
+            
+            
+            
             //Errorhandling corrected -- no errno is used because there is no errno code for this
             fprintf(stderr, "myfind() - check_print(): Error: unknown parameter\n");
 		}
@@ -228,7 +293,7 @@ void check_print(const char * file_name, const char * parms, int parms_length){
 /**
  * check_params()
  * Returns 0 = everything is OK
-
+ * Returns 1 = no params in Stack
  * Returns 2 = location is not correct
  * Returns 3 = no parameter given
  * Returns 4 = not allowed parameter found
@@ -250,19 +315,13 @@ int check_params(int argc, const char * argv[])
     int ii=0;
     
     
-    printf("\ncheck_params() number of parameters exclusive programm_itself are: %d\n", argc -1); //FOR TEST
+    //printf("\ncheck_params() number of parameters exclusive programm_itself are: %d\n", argc -1); //FOR TEST
     
     
     //is true when minimum one parameter is given
     if(argc > 1)
     {
         
-        //TEST ---  overview about the given parameters
-        for (i = 1; i < argc; i++)
-        {
-            printf("\ncheck_params() Param %d =  %s\n", i, argv[i]);
-        }
-    
         
         ///Check if first param is a File or Dir, when not, then not correct
         if (which_location(argv[1]) == -1)
@@ -380,6 +439,14 @@ int check_params(int argc, const char * argv[])
         //Returns 3 = no parameter given
         return 3;
     }
+    
+    
+    if(stack_count == 0)
+    {
+        //Returns 1 = no params in Stack
+        return 1;
+    }
+    
     //Returns 0 = everything is OK
     return 0;
     
@@ -416,7 +483,6 @@ int which_location(const char *locationName)
     else{                                    return -1;} //"undef"
     
 }
-
 
 
 /**
@@ -621,8 +687,6 @@ int check_param_options(const char * argv[], int aktiv_param_index)
 }
 
 
-
-
 /**
  *
  * push(const char * param,const char * option)
@@ -727,6 +791,245 @@ int pop ()
     
     return 0;
 }
+
+
+
+
+//do_params()
+//
+// returns 0 == everything ok
+// returns 1 == print imediately because of -ls or -print
+// returns 2 == not print this line
+// returns 3 == Stack is Empty
+
+int do_params(char *file_or_dir_name)
+{
+    
+    typedef enum yes_no {YES,NO}yes_no;
+    
+    yes_no print_it = NO;
+    
+    
+    //Check if Steck is empty
+    if(stack_count == 0)
+    {
+        return 3;
+    }
+    
+    
+    
+    //-------------------------------------------------------------------------------------------TYPE_PARAM
+    if(strcmp(allowed_params[TYPE_PARAM], param_list->s_parameter) == 0)
+    {
+        
+        //char * allowed_options[]={"b","c","d","p","f","l","s", NULL};
+
+
+        //WHEN FILE, THEN---------------------------------------f
+        if(strcmp("f", param_list->s_option) == 0)
+        {
+        
+            //IF IT's CORRECT, THEN PRINT_IT = YES
+            if( which_location((const char*)file_or_dir_name) == 1) { //*  which:location  return 1  -->   "ordinary file"
+                print_it = YES;
+            }
+            else{
+                print_it = NO;
+                // returns 2 == not print this line
+                return 2;
+            }
+  
+        }
+        
+
+        //WHEN DIRECTORY, THEN----------------------------------d
+        if(strcmp("d", param_list->s_option) == 0)
+        {
+            
+            //IF IT's CORRECT, THEN PRINT_IT = YES
+            if( which_location((const char*)file_or_dir_name) == 2) { //*  which:location  return 2  -->   "directory"
+                print_it = YES;
+            }
+            else{
+                print_it = NO;
+                // returns 2 == not print this line
+                return 2;
+            }
+            
+        }
+        
+        
+        //WHEN text special, THEN-------------------------------c
+        if(strcmp("c", param_list->s_option) == 0)
+        {
+            
+            //IF IT's CORRECT, THEN PRINT_IT = YES
+            if( which_location((const char*)file_or_dir_name) == 3) { //*  which:location  return 3  -->   "text orientated DEVICE"
+                print_it = YES;
+            }
+            else{
+                print_it = NO;
+                // returns 2 == not print this line
+                return 2;
+            }
+            
+        }
+        
+  
+        
+        //WHEN block special, THEN------------------------------b
+        if(strcmp("b", param_list->s_option) == 0)
+        {
+            
+            //IF IT's CORRECT, THEN PRINT_IT = YES
+            if( which_location((const char*)file_or_dir_name) == 4) { //*  which:location  return 4  -->   "block oriented DEVICE"
+                print_it = YES;
+            }
+            else{
+                print_it = NO;
+                // returns 2 == not print this line
+                return 2;
+            }
+            
+        }
+        
+        
+        //WHEN pipe, THEN---------------------------------------p
+        if(strcmp("p", param_list->s_option) == 0)
+        {
+            
+            //IF IT's CORRECT, THEN PRINT_IT = YES
+            if( which_location((const char*)file_or_dir_name) == 5) { //*  which:location  return 5  -->   "pipe"
+                print_it = YES;
+            }
+            else{
+                print_it = NO;
+                // returns 2 == not print this line
+                return 2;
+            }
+            
+        
+        }
+        
+        
+        //WHEN symbolic link, THEN-------------------------------l
+        if(strcmp("l", param_list->s_option) == 0)
+        {
+            
+            //IF IT's CORRECT, THEN PRINT_IT = YES
+            if( which_location((const char*)file_or_dir_name) == 6) { //*  which:location  return 6  -->   "symbolic link";
+                print_it = YES;
+            }
+            else{
+                print_it = NO;
+                // returns 2 == not print this line
+                return 2;
+            }
+            
+            
+        }
+        
+        
+        
+        /*
+        //
+        // GS: -- ATTENTION -- WHICH LOCATION HAS TO BE UPDATE --> SOCKET RETURN MUST BE IMPLEMENTED AGAIN
+        //WHEN socket, THEN---------------------------------------s
+        if(strcmp("s", param_list->s_option) == 0)
+        {
+            
+            //IF IT's CORRECT, THEN PRINT_IT = YES
+            if( which_location((const char*)file_or_dir_name) == 7) {
+                print_it = YES;
+            }
+            else{
+                // returns 2 == not print this line
+                return 2;
+            }
+            
+            
+        }
+        */
+        
+        
+        
+    }
+    
+    
+    //-------------------------------------------------------------------------------------------NAME_PARAM
+    if(strcmp(allowed_params[NAME_PARAM], param_list->s_parameter) == 0)
+    {
+        
+    }
+    
+
+    
+    //-------------------------------------------------------------------------------------------USER_PARAM
+    if(strcmp(allowed_params[USER_PARAM], param_list->s_parameter) == 0)
+    {
+        
+    }
+    
+
+    
+    //-------------------------------------------------------------------------------------------PRINT_PARAM
+    if(strcmp(allowed_params[PRINT_PARAM], param_list->s_parameter) == 0)
+    {
+        //POP FOR NEXT PARAMETER
+        pop();
+
+        return 1;
+        
+    }
+    
+
+    
+    //-------------------------------------------------------------------------------------------LS_PARAM
+    if(strcmp(allowed_params[LS_PARAM], param_list->s_parameter) == 0)
+    {
+        
+        //POP FOR NEXT PARAMETER
+        pop();
+        
+        return 1;
+    }
+    
+    
+
+    //-------------------------------------------------------------------------------------------NOUSER_PARAM
+    if(strcmp(allowed_params[NOUSER_PARAM], param_list->s_parameter) == 0)
+    {
+        
+    }
+    
+    
+
+    //-------------------------------------------------------------------------------------------PATH_PARAM
+    if(strcmp(allowed_params[PATH_PARAM], param_list->s_parameter) == 0)
+    {
+        
+    }
+    
+    
+    
+    
+    //POP FOR NEXT PARAMETER
+    pop();
+    
+    
+    //OVER-ALL-PRINT -> PRINT WENN EVERYTHING LOOKS GOOD
+    
+    if(print_it == YES){
+    
+        fprintf(stdout, "%s\n", file_or_dir_name);
+
+    }
+    
+    return 0;
+}
+
+
+
 
 
 void view_help(void)

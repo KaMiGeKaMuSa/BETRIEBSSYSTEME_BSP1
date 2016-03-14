@@ -646,6 +646,8 @@ int check_param_options(const char * argv[], int aktiv_param_index)
     if (strcmp(allowed_params[LS_PARAM], argv[aktiv_param_index]) == 0)
     {
     
+		
+		
         //Push to PARAM_LIST and check if push() work well
         if (push(argv[aktiv_param_index], "") != 0)
         {
@@ -990,7 +992,58 @@ int do_params(char *file_or_dir_name)
     //-------------------------------------------------------------------------------------------LS_PARAM
     if(strcmp(allowed_params[LS_PARAM], param_list->s_parameter) == 0)
     {
-        
+		struct stat sb;
+		char outputString;
+		time_t t;
+
+		stat(file_or_dir_name, &sb);
+		
+		struct passwd *pw = getpwuid(sb.st_uid);
+		struct group  *gr = getgrgid(sb.st_gid);
+		
+		printf("%ld	%lld	%s%s%s%s%s%s%s%s%s%s	%ld	%s	%s\n", 
+			(long) sb.st_ino, 
+			(long long) sb.st_blocks, 
+				(S_ISDIR(sb.st_mode)) ? "d" : "-", 
+				(sb.st_mode & S_IRUSR) ? "r" : "-",
+				(sb.st_mode & S_IWUSR) ? "w" : "-",
+				(sb.st_mode & S_IXUSR) ? "x" : "-",
+				(sb.st_mode & S_IRGRP) ? "r" : "-",
+				(sb.st_mode & S_IWGRP) ? "w" : "-",
+				(sb.st_mode & S_IXGRP) ? "x" : "-",
+				(sb.st_mode & S_IROTH) ? "r" : "-",
+				(sb.st_mode & S_IWOTH) ? "w" : "-",
+				(sb.st_mode & S_IXOTH) ? "x" : "-",
+			(long) sb.st_nlink,
+			pw->pw_name,
+			gr->gr_name
+			
+			);
+		
+		printf("I-node number:            %ld\n", (long) sb.st_ino);
+		printf("Blocks allocated:         %lld\n", (long long) sb.st_blocks);
+		
+        printf("File Permissions: \t");
+		printf( (S_ISDIR(sb.st_mode)) ? "d" : "-");
+		printf( (sb.st_mode & S_IRUSR) ? "r" : "-");
+		printf( (sb.st_mode & S_IWUSR) ? "w" : "-");
+		printf( (sb.st_mode & S_IXUSR) ? "x" : "-");
+		printf( (sb.st_mode & S_IRGRP) ? "r" : "-");
+		printf( (sb.st_mode & S_IWGRP) ? "w" : "-");
+		printf( (sb.st_mode & S_IXGRP) ? "x" : "-");
+		printf( (sb.st_mode & S_IROTH) ? "r" : "-");
+		printf( (sb.st_mode & S_IWOTH) ? "w" : "-");
+		printf( (sb.st_mode & S_IXOTH) ? "x" : "-");
+		printf("\n\n");
+		
+		printf("Link count:               %ld\n", (long) sb.st_nlink);
+		
+		 
+		printf("User:            %s\n", pw->pw_name);
+		printf("Group:         %s\n", gr->gr_name );
+		
+		 printf("Last file modification:   %s", ctime(&sb.st_mtime));
+	
         //POP FOR NEXT PARAMETER
         pop();
         
@@ -1002,7 +1055,7 @@ int do_params(char *file_or_dir_name)
     //-------------------------------------------------------------------------------------------NOUSER_PARAM
     if(strcmp(allowed_params[NOUSER_PARAM], param_list->s_parameter) == 0)
     {
-			struct stat *buf;
+			/*struct stat *buf;
 			if (lstat(file_name, buf) != 0) {
 				printf("Error! lstat-Eintrag konnte nicht ermittelt werden. \n");
 				return 2; 
@@ -1015,7 +1068,7 @@ int do_params(char *file_or_dir_name)
 				print_it = NO;
 				// returns 2 == not print this line
 				return 2;
-			}
+			}*/
 		
     }
     
@@ -1024,7 +1077,8 @@ int do_params(char *file_or_dir_name)
     //-------------------------------------------------------------------------------------------PATH_PARAM
     if(strcmp(allowed_params[PATH_PARAM], param_list->s_parameter) == 0)
     {
-        
+        //mit path wird der ganze Pfad der Datei mit dem jeweiligen Pattern überprüft (fnmatch!!)
+		
     }
     
     

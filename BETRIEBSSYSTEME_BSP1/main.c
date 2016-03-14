@@ -209,7 +209,7 @@ void do_dir(const char * dir_name, const char * parms, int parms_length,const ch
                             int help_return= do_params(dir_element->d_name);
 
                             if (help_return == 1 ) { //do_params() returns 1 == print imediately because of -ls or -print
-                                    fprintf(stdout, " print do_dir %s\n", dir_element->d_name);
+                                    fprintf(stdout, "%s\n", dir_element->d_name);
                                 }
             
                     }
@@ -1055,13 +1055,19 @@ int do_params(char *file_or_dir_name)
     //-------------------------------------------------------------------------------------------NOUSER_PARAM
     if(strcmp(allowed_params[NOUSER_PARAM], param_list->s_parameter) == 0)
     {
+<<<<<<< HEAD
 			/*struct stat *buf;
 			if (lstat(file_name, buf) != 0) {
+=======
+			struct stat buf;
+        
+			if (lstat((const char*)file_or_dir_name, &buf) != 0) {
+>>>>>>> b7d792473bda6f080ae056154d36041180309985
 				printf("Error! lstat-Eintrag konnte nicht ermittelt werden. \n");
 				return 2; 
 			}
 
-			if (getpwuid(buf->st_uid) == NULL) {
+			if (getpwuid(buf.st_uid) == NULL) {
 				print_it = YES;
 			}
 			else {
@@ -1080,7 +1086,6 @@ int do_params(char *file_or_dir_name)
         //mit path wird der ganze Pfad der Datei mit dem jeweiligen Pattern überprüft (fnmatch!!)
 		
     }
-    
     
     
     

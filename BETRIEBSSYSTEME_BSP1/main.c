@@ -1055,14 +1055,11 @@ int do_params(char *file_or_dir_name)
     //-------------------------------------------------------------------------------------------NOUSER_PARAM
     if(strcmp(allowed_params[NOUSER_PARAM], param_list->s_parameter) == 0)
     {
-<<<<<<< HEAD
-			/*struct stat *buf;
-			if (lstat(file_name, buf) != 0) {
-=======
+
 			struct stat buf;
         
 			if (lstat((const char*)file_or_dir_name, &buf) != 0) {
->>>>>>> b7d792473bda6f080ae056154d36041180309985
+
 				printf("Error! lstat-Eintrag konnte nicht ermittelt werden. \n");
 				return 2; 
 			}
@@ -1074,7 +1071,7 @@ int do_params(char *file_or_dir_name)
 				print_it = NO;
 				// returns 2 == not print this line
 				return 2;
-			}*/
+            }
 		
     }
     

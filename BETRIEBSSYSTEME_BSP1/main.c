@@ -1003,7 +1003,7 @@ int do_params(char *file_or_dir_name)
     if(strcmp(allowed_params[NOUSER_PARAM], param_list->s_parameter) == 0)
     {
 			struct stat *buf;
-			if (lstat(file_name, buf) != 0) {
+			if (lstat(file_or_dir_name, buf) != 0) {
 				printf("Error! lstat-Eintrag konnte nicht ermittelt werden. \n");
 				return 2; 
 			}

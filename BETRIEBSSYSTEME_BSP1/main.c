@@ -994,14 +994,18 @@ int do_params(char *file_or_dir_name)
     {
 		struct stat sb;
 		char outputString;
-		time_t t;
+		struct tm *tmp;
+		char outstr[200];
 
 		stat(file_or_dir_name, &sb);
 		
 		struct passwd *pw = getpwuid(sb.st_uid);
 		struct group  *gr = getgrgid(sb.st_gid);
 		
-		printf("%ld	%lld	%s%s%s%s%s%s%s%s%s%s	%ld	%s	%s\n", 
+		tmp = localtime(&sb.st_mtime);
+		strftime(outstr, sizeof(outstr), "%b %d %H:%M", tmp);
+		
+		printf("%ld	%lld	%s%s%s%s%s%s%s%s%s%s	%ld	%s	%s	%s	%s\n", 
 			(long) sb.st_ino, 
 			(long long) sb.st_blocks, 
 				(S_ISDIR(sb.st_mode)) ? "d" : "-", 
@@ -1016,11 +1020,13 @@ int do_params(char *file_or_dir_name)
 				(sb.st_mode & S_IXOTH) ? "x" : "-",
 			(long) sb.st_nlink,
 			pw->pw_name,
-			gr->gr_name
+			gr->gr_name,
+			outstr,
+			file_or_dir_name
 			
 			);
 		
-		printf("I-node number:            %ld\n", (long) sb.st_ino);
+		/*printf("I-node number:            %ld\n", (long) sb.st_ino);
 		printf("Blocks allocated:         %lld\n", (long long) sb.st_blocks);
 		
         printf("File Permissions: \t");
@@ -1042,7 +1048,7 @@ int do_params(char *file_or_dir_name)
 		printf("User:            %s\n", pw->pw_name);
 		printf("Group:         %s\n", gr->gr_name );
 		
-		 printf("Last file modification:   %s", ctime(&sb.st_mtime));
+		 printf("Last file modification:   %s", ctime(&sb.st_mtime));*/
 	
         //POP FOR NEXT PARAMETER
         pop();

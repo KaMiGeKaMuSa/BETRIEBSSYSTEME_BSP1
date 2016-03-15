@@ -1087,6 +1087,10 @@ int do_params(char *file_or_dir_name)
     if(strcmp(allowed_params[PATH_PARAM], param_list->s_parameter) == 0)
     {
         //mit path wird der ganze Pfad der Datei mit dem jeweiligen Pattern überprüft (fnmatch!!)
+		if (fnmatch(param_list->s_option, file_or_dir_name, 0) == 0) { print_it = YES; }
+			else {
+				print_it = NO; // returns 2 == not print this line 
+			return 2; } 
 		
     }
     

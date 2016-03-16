@@ -212,9 +212,15 @@ void do_dir(const char * dir_name, const char * parms, int parms_length,const ch
     
 	while ((dir_element = readdir(dir_object)) && dir_element) {
         
+		char * tempStr = (char *) malloc(1 + strlen("/")+ strlen(argv[1]) );
+		strcpy(tempStr, "/");
+		strcat(tempStr, argv[1]);
 		
 		if (strcmp(dir_element->d_name, "..") == 0) continue;
-		if (strcmp(dir_element->d_name, ".") == 0 && strcmp(fullpath, argv[1]) == 0) continue;
+		
+		if (strcmp(dir_element->d_name, ".") == 0 && strcmp(fullpath, tempStr) != 0) continue;
+		
+		free(tempStr);
 		
         	//initialise i and reset i
         	int i = 0;

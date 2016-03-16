@@ -1064,7 +1064,7 @@ int do_params(char *file_or_dir_name)
 
 			struct stat buf;
         
-			if (lstat((const char*)file_or_dir_name, &buf) != 0) {
+			if (stat((const char*)file_or_dir_name, &buf) != 0) {
 
 				printf("Error! lstat-Eintrag konnte nicht ermittelt werden. \n");
 				return 2; 

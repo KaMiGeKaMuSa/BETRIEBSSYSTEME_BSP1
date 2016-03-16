@@ -475,11 +475,11 @@ int which_location(const char *locationName)
 		strcpy(tempStr, fullpath);
 		strcat(tempStr, locationName);
 		
-		lstat(tempStr, &which_entry);
+		stat(tempStr, &which_entry);
 		
 		free(tempStr);
     } else {
-		lstat(locationName, &which_entry);
+		stat(locationName, &which_entry);
 	}
 	
     //int stat(const char *path, struct stat *buf);
@@ -494,8 +494,6 @@ int which_location(const char *locationName)
     else if(S_ISLNK(which_entry.st_mode)){   return 6;}  //"symbolic link";
     else if(S_ISSOCK(which_entry.st_mode)){  return 7;}  //"socket"
     else{                                    return -1;} //"undef"
-    
-    
     
     
 }

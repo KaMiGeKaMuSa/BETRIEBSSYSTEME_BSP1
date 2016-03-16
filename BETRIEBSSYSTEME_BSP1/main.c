@@ -239,7 +239,7 @@ void do_dir(const char * dir_name, const char * parms, int parms_length,const ch
 		
 		//MM: rekursives aufrufen der do_dir damit man in die directory reingehen kann:
 		printf("which_location: %d\n", which_location(dir_element->d_name));
-        	if (dir_element->d_type == DT_DIR) {
+        	if (which_location(dir_element->d_name) == 2) {
             		printf("test\n");
             		if (strcmp(dir_element->d_name, ".") == 0 || strcmp(dir_element->d_name, "..") == 0)
                 		continue;
@@ -998,9 +998,9 @@ int do_params(char *file_or_dir_name)
 		tmp = localtime(&sb.st_mtime);
 		strftime(outstr, sizeof(outstr), "%b %d %H:%M", tmp);
 		
-		printf("%ld	%lld	%s%s%s%s%s%s%s%s%s%s	%ld	%s	%s	%s	%s%s\n", 
+		printf("%6ld %4lld %s%s%s%s%s%s%s%s%s%s %3lld %s %s %8ld %s %s%s\n", 
 			(long) sb.st_ino, 
-			(long long) sb.st_blocks, 
+			(long long) sb.st_blocks / 2, 
 				(S_ISDIR(sb.st_mode)) ? "d" : "-", 
 				(sb.st_mode & S_IRUSR) ? "r" : "-",
 				(sb.st_mode & S_IWUSR) ? "w" : "-",
@@ -1011,37 +1011,15 @@ int do_params(char *file_or_dir_name)
 				(sb.st_mode & S_IROTH) ? "r" : "-",
 				(sb.st_mode & S_IWOTH) ? "w" : "-",
 				(sb.st_mode & S_IXOTH) ? "x" : "-",
-			(long) sb.st_nlink,
+			(long long) sb.st_nlink,
 			pw->pw_name,
 			gr->gr_name,
+			sb.st_size,
 			outstr,
 			fullpath, 
 			file_or_dir_name
 			);
 		
-		/*printf("I-node number:            %ld\n", (long) sb.st_ino);
-		printf("Blocks allocated:         %lld\n", (long long) sb.st_blocks);
-		
-        printf("File Permissions: \t");
-		printf( (S_ISDIR(sb.st_mode)) ? "d" : "-");
-		printf( (sb.st_mode & S_IRUSR) ? "r" : "-");
-		printf( (sb.st_mode & S_IWUSR) ? "w" : "-");
-		printf( (sb.st_mode & S_IXUSR) ? "x" : "-");
-		printf( (sb.st_mode & S_IRGRP) ? "r" : "-");
-		printf( (sb.st_mode & S_IWGRP) ? "w" : "-");
-		printf( (sb.st_mode & S_IXGRP) ? "x" : "-");
-		printf( (sb.st_mode & S_IROTH) ? "r" : "-");
-		printf( (sb.st_mode & S_IWOTH) ? "w" : "-");
-		printf( (sb.st_mode & S_IXOTH) ? "x" : "-");
-		printf("\n\n");
-		
-		printf("Link count:               %ld\n", (long) sb.st_nlink);
-		
-		 
-		printf("User:            %s\n", pw->pw_name);
-		printf("Group:         %s\n", gr->gr_name );
-		
-		 printf("Last file modification:   %s", ctime(&sb.st_mtime));*/
 	
         //POP FOR NEXT PARAMETER
         pop();

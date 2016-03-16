@@ -34,6 +34,7 @@
 #include <time.h>
 #include <fnmatch.h>
 #include <unistd.h>
+
 /*
  * --------------------------------------------------------------- defines --
  */
@@ -47,6 +48,13 @@
 #define LS_PARAM 4
 #define NOUSER_PARAM 5
 #define PATH_PARAM 6
+
+
+
+# ifndef S_ISSOCK
+# define S_ISSOCK(mode) __S_ISTYPE((mode), __S_IFSOCK)
+# endif
+
 
 /*
  * ------------------------------------------------------------- global --

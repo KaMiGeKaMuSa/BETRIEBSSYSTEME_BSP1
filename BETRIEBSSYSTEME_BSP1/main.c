@@ -72,7 +72,7 @@ int stack_count = 0;
 
 
 const char * allowed_params[]={"-name","-type", "-user", "-print", "-ls", "-nouser", "-path", NULL};
-
+char *fullpath = NULL;
 
 
 //var for Error Handling = errno
@@ -116,7 +116,11 @@ int main(int argc, const char * argv[]) {
     
     if (check_params_return > 1) return 1;
     
-    
+    if ((fullpath = realloc(fullpath, 256)) == NULL) {
+        fprintf(stderr, "out of memory!\n");
+        exit(1);
+    }
+	
     //TEST ---  overview about the given parameters
     printf("\ncheck_params() number of parameters exclusive programm_itself are: %d\n", argc -1); //FOR TEST
 
@@ -129,6 +133,7 @@ int main(int argc, const char * argv[]) {
     
 		// if directory then go to do_dir
         if (which_location(argv[1]) == 2) {
+			strcpy(fullpath,argv[1]);
            do_dir(argv[1], argv[2], argc, argv,check_params_return);
         }
         // if file then go to do_file
@@ -184,12 +189,14 @@ void do_dir(const char * dir_name, const char * parms, int parms_length,const ch
     //var to save errno state
     int errnum;
     
+	strcat(fullpath, "/");
+	printf("fullPath: %s\n", fullpath);
     
 	if ((dir_object = opendir(dir_name)) == NULL) {
         
         //Correct Error Handling with Errno, state saved in errnum
         errnum = errno;
-        fprintf(stderr, "Error opening: %s  Name: %s\n", strerror( errnum ), dir_name);
+        fprintf(stderr, "Error opening: %s  Name: %s%s\n", strerror( errnum ), fullpath, dir_name);
         return;
     }
 	
@@ -197,6 +204,10 @@ void do_dir(const char * dir_name, const char * parms, int parms_length,const ch
     
 	while ((dir_element = readdir(dir_object)) && dir_element) {
         
+		
+		//if (strcmp(dir_element->d_name, "..") == 0) continue;
+		//if (strcmp(dir_element->d_name, ".") == 0 && strcmp(fullpath, argv[1]) == 0) continue;
+		
         //initialise i and reset i
         int i = 0;
 
@@ -209,7 +220,7 @@ void do_dir(const char * dir_name, const char * parms, int parms_length,const ch
                             int help_return= do_params(dir_element->d_name);
 
                             if (help_return == 1 ) { //do_params() returns 1 == print imediately because of -ls or -print
-                                    fprintf(stdout, "%s\n", dir_element->d_name);
+                                    fprintf(stdout, "%s%s\n", fullpath, dir_element->d_name);
                                 }
             
                     }
@@ -222,42 +233,23 @@ void do_dir(const char * dir_name, const char * parms, int parms_length,const ch
         }
         else
         {
-            fprintf(stdout, "%s\n", dir_element->d_name);
+            fprintf(stdout, "%s%s\n", fullpath, dir_element->d_name);
         }
-        
-        
-        /*
-        
-        if (strcmp(dir_element->d_name, ".") == 0){
-
-            check_print(dir_element->d_name, parms, parms_length);
-            
-            continue; // dont process . Directory -> endless loop
-        }
-        
-        
-        if (strcmp(dir_element->d_name, "..") == 0) continue; // dont process .. directory
 		
-		//printf("location: %s, type: %d\n", dir_element->d_name, which_location(dir_element->d_name));
 		
-        
-        //Whenn file is found, then do file
-        if (which_location(dir_element->d_name) == 1){
-			do_file(dir_element->d_name, parms,parms_length);
+		//MM: rekursives aufrufen der do_dir damit man in die directory reingehen kann:
+		printf("which_location: %d\n", which_location(dir_element->d_name));
+        if (which_location(dir_element->d_name) == 2 && strcmp(dir_element->d_name, ".") != 0 && strcmp(dir_element->d_name, "..") != 0){
+			printf("test");
+			strcat(fullpath,dir_element->d_name);
+			//strcat(fullpath, "/");
+			do_dir(dir_element->d_name, parms,parms_length,argv, check_params_return);
 		}
-        //GS: also other STUFF should be listed
-        else {
-            check_print(dir_element->d_name, parms, parms_length);
-        }
-        
-        
-        */
-        
-        
     }
 	
-	
-	 closedir(dir_object);
+	fullpath[strlen(fullpath)-strlen(dir_name)-1] = '\0';
+		
+	closedir(dir_object);
 }
 
 // MM:
@@ -287,7 +279,6 @@ void check_print(const char * file_name, const char * parms, int parms_length){
 		}
 	}
 }
-
 
 
 /**
@@ -1005,7 +996,7 @@ int do_params(char *file_or_dir_name)
 		tmp = localtime(&sb.st_mtime);
 		strftime(outstr, sizeof(outstr), "%b %d %H:%M", tmp);
 		
-		printf("%ld	%lld	%s%s%s%s%s%s%s%s%s%s	%ld	%s	%s	%s	%s\n", 
+		printf("%ld	%lld	%s%s%s%s%s%s%s%s%s%s	%ld	%s	%s	%s	%s%s\n", 
 			(long) sb.st_ino, 
 			(long long) sb.st_blocks, 
 				(S_ISDIR(sb.st_mode)) ? "d" : "-", 
@@ -1022,8 +1013,8 @@ int do_params(char *file_or_dir_name)
 			pw->pw_name,
 			gr->gr_name,
 			outstr,
+			fullpath, 
 			file_or_dir_name
-			
 			);
 		
 		/*printf("I-node number:            %ld\n", (long) sb.st_ino);
@@ -1087,10 +1078,16 @@ int do_params(char *file_or_dir_name)
     if(strcmp(allowed_params[PATH_PARAM], param_list->s_parameter) == 0)
     {
         //mit path wird der ganze Pfad der Datei mit dem jeweiligen Pattern überprüft (fnmatch!!)
-		if (fnmatch(param_list->s_option, file_or_dir_name, 0) == 0) { print_it = YES; }
+		char * tempStr = (char *) malloc(1 + strlen(fullpath)+ strlen(file_or_dir_name) );
+		strcpy(tempStr, fullpath);
+		strcat(tempStr, file_or_dir_name);
+		
+		if (fnmatch(param_list->s_option, tempStr, 0) == 0) { print_it = YES; }
 			else {
 				print_it = NO; // returns 2 == not print this line 
 			return 2; } 
+			
+		free(tempStr);
 		
     }
     

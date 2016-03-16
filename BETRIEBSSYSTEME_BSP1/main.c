@@ -243,10 +243,10 @@ void do_dir(const char * dir_name, const char * parms, int parms_length,const ch
             		printf("test\n");
             		if (strcmp(dir_element->d_name, ".") == 0 || strcmp(dir_element->d_name, "..") == 0)
                 		continue;
-			strcat(fullpath,dir_element->d_name);
-			//strcat(fullpath, "/");
-			do_dir(dir_element->d_name, parms,parms_length,argv, check_params_return);
-		}
+				strcat(fullpath,dir_element->d_name);
+				//strcat(fullpath, "/");
+				do_dir(dir_element->d_name, parms,parms_length,argv, check_params_return);
+			}
     	}
 	
 	fullpath[strlen(fullpath)-strlen(dir_name)-1] = '\0';

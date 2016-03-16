@@ -190,7 +190,7 @@ void do_dir(const char * dir_name, const char * parms, int parms_length,const ch
     int errnum;
     
 	strcat(fullpath, "/");
-	printf("fullPath: %s\n", fullpath);
+	//printf("fullPath: %s, dirname: %s\n", fullpath, dir_name);
     
 	if ((dir_object = opendir(dir_name)) == NULL) {
         
@@ -238,14 +238,13 @@ void do_dir(const char * dir_name, const char * parms, int parms_length,const ch
 		
 		
 		//MM: rekursives aufrufen der do_dir damit man in die directory reingehen kann:
-		printf("which_location: %d\n", which_location(dir_element->d_name));
+		//printf("which_location: %d\n", which_location(dir_element->d_name));
         	if (which_location(dir_element->d_name) == 2) {
-            		printf("test\n");
             		if (strcmp(dir_element->d_name, ".") == 0 || strcmp(dir_element->d_name, "..") == 0)
                 		continue;
 				strcat(fullpath,dir_element->d_name);
 				//strcat(fullpath, "/");
-				do_dir(dir_element->d_name, parms,parms_length,argv, check_params_return);
+				do_dir(fullpath, parms,parms_length,argv, check_params_return);
 			}
     	}
 	
@@ -461,9 +460,20 @@ int check_params(int argc, const char * argv[])
 int which_location(const char *locationName)
 {
     struct stat which_entry;
-    
+	if ( fullpath != NULL) {
+		char * tempStr = (char *) malloc(1 + strlen(fullpath)+ strlen(locationName) );
+		strcpy(tempStr, fullpath);
+		strcat(tempStr, locationName);
+		
+		stat(tempStr, &which_entry);
+		
+		free(tempStr);
+    } else {
+		stat(locationName, &which_entry);
+	}
+	
     //int stat(const char *path, struct stat *buf);
-    stat(locationName, &which_entry);
+    
     
     //check which location it is
     if(S_ISREG(which_entry.st_mode)){        return 1;}  //"ordinary file"
@@ -667,12 +677,11 @@ int check_param_options(const char * argv[], int aktiv_param_index)
     if (strcmp(allowed_params[PATH_PARAM], argv[aktiv_param_index]) == 0)
     {
         
-        //Push to PARAM_LIST and check if push() work well
-        if (push(argv[aktiv_param_index], "") != 0)
-        {
-            //Returns 2 = push() failed
-            return 2;
-        }
+		if (push(argv[aktiv_param_index], argv[aktiv_option]) != 0)
+            {
+                //Returns 2 = push() failed
+                return 2;
+            }
         
     }
     
@@ -810,7 +819,6 @@ int do_params(char *file_or_dir_name)
     {
         return 3;
     }
-    
     
     
     //-------------------------------------------------------------------------------------------TYPE_PARAM
@@ -991,13 +999,13 @@ int do_params(char *file_or_dir_name)
 		char outstr[200];
 
 		stat(file_or_dir_name, &sb);
-		
+	
 		struct passwd *pw = getpwuid(sb.st_uid);
 		struct group  *gr = getgrgid(sb.st_gid);
 		
 		tmp = localtime(&sb.st_mtime);
 		strftime(outstr, sizeof(outstr), "%b %d %H:%M", tmp);
-		
+		    
 		printf("%6ld %4lld %s%s%s%s%s%s%s%s%s%s %3lld %s %s %8ld %s %s%s\n", 
 			(long) sb.st_ino, 
 			(long long) sb.st_blocks / 2, 
@@ -1020,11 +1028,10 @@ int do_params(char *file_or_dir_name)
 			file_or_dir_name
 			);
 		
-	
         //POP FOR NEXT PARAMETER
         pop();
         
-        return 1;
+        return 0;
     }
     
     
@@ -1061,7 +1068,7 @@ int do_params(char *file_or_dir_name)
 		char * tempStr = (char *) malloc(1 + strlen(fullpath)+ strlen(file_or_dir_name) );
 		strcpy(tempStr, fullpath);
 		strcat(tempStr, file_or_dir_name);
-		
+		printf("1: %s, 2: %s\n", param_list->s_option, tempStr);
 		if (fnmatch(param_list->s_option, tempStr, 0) == 0) { print_it = YES; }
 			else {
 				print_it = NO; // returns 2 == not print this line 

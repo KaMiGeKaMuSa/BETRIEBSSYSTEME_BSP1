@@ -50,7 +50,7 @@
 #define PATH_PARAM 6
 
 
-
+//USED FOR WHICH LOCATION
 # ifndef S_ISSOCK
 # define S_ISSOCK(mode) __S_ISTYPE((mode), __S_IFSOCK)
 # endif
@@ -470,46 +470,21 @@ int which_location(const char *locationName)
 {
     struct stat which_entry;
     
-    FILE * fp;
-    
-    //opens up file pointer readable
-    fp = fopen(locationName, "r");
-    
-    if (fp == NULL)
-    {
-        fprintf(stderr,"Error file_o_dir() fopen()");
-        return -1;
-    }
-
-    
 	if ( fullpath != NULL) {
 		char * tempStr = (char *) malloc(1 + strlen(fullpath)+ strlen(locationName) );
 		strcpy(tempStr, fullpath);
 		strcat(tempStr, locationName);
 		
-		stat(tempStr, &which_entry);
+		lstat(tempStr, &which_entry);
 		
 		free(tempStr);
     } else {
-		stat(locationName, &which_entry);
+		lstat(locationName, &which_entry);
 	}
 	
     //int stat(const char *path, struct stat *buf);
     
-    
-    //check which location it is
-    if(S_ISREG(which_entry.st_mode)){        (void) fclose(fp);      return 1;}  //"ordinary file"
-    else if(S_ISDIR(which_entry.st_mode)){   (void) fclose(fp);      return 2;}  //"directory"
-    else if(S_ISCHR(which_entry.st_mode)){   (void) fclose(fp);      return 3;}  //"text orientated DEVICE"
-    else if(S_ISBLK(which_entry.st_mode)){   (void) fclose(fp);      return 4;}  //"block orientated DEVICE"
-    else if(S_ISFIFO(which_entry.st_mode)){  (void) fclose(fp);      return 5;}  //"pipe"
-    else if(S_ISLNK(which_entry.st_mode)){   (void) fclose(fp);      return 6;}  //"symbolic link";
-    else if(S_ISSOCK(which_entry.st_mode)){  (void) fclose(fp);      return 7;}  //"socket"
-    else{                                    (void) fclose(fp);      return -1;} //"undef"
-    
 
-    
-    /*
     //check which location it is
     if(S_ISREG(which_entry.st_mode)){        return 1;}  //"ordinary file"
     else if(S_ISDIR(which_entry.st_mode)){   return 2;}  //"directory"
@@ -517,10 +492,10 @@ int which_location(const char *locationName)
     else if(S_ISBLK(which_entry.st_mode)){   return 4;}  //"block orientated DEVICE"
     else if(S_ISFIFO(which_entry.st_mode)){  return 5;}  //"pipe"
     else if(S_ISLNK(which_entry.st_mode)){   return 6;}  //"symbolic link";
-    //else if(S_ISSOCK(which_entry.st_mode)){  (void) fclose(fp);      return 7;}  //"socket"
+    else if(S_ISSOCK(which_entry.st_mode)){  return 7;}  //"socket"
     else{                                    return -1;} //"undef"
     
-    */
+    
     
     
 }
@@ -1007,6 +982,15 @@ int do_params(char *file_or_dir_name)
     //-------------------------------------------------------------------------------------------USER_PARAM
     if(strcmp(allowed_params[USER_PARAM], param_list->s_parameter) == 0)
     {
+        
+        
+        
+        
+        
+        
+        
+        
+        
         
     }
     

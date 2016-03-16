@@ -205,8 +205,8 @@ void do_dir(const char * dir_name, const char * parms, int parms_length,const ch
 	while ((dir_element = readdir(dir_object)) && dir_element) {
         
 		
-		//if (strcmp(dir_element->d_name, "..") == 0) continue;
-		//if (strcmp(dir_element->d_name, ".") == 0 && strcmp(fullpath, argv[1]) == 0) continue;
+		if (strcmp(dir_element->d_name, "..") == 0) continue;
+		if (strcmp(dir_element->d_name, ".") == 0 && strcmp(fullpath, argv[1]) == 0) continue;
 		
         	//initialise i and reset i
         	int i = 0;
@@ -1068,7 +1068,7 @@ int do_params(char *file_or_dir_name)
 		char * tempStr = (char *) malloc(1 + strlen(fullpath)+ strlen(file_or_dir_name) );
 		strcpy(tempStr, fullpath);
 		strcat(tempStr, file_or_dir_name);
-		printf("1: %s, 2: %s\n", param_list->s_option, tempStr);
+		
 		if (fnmatch(param_list->s_option, tempStr, 0) == 0) { print_it = YES; }
 			else {
 				print_it = NO; // returns 2 == not print this line 
@@ -1088,7 +1088,7 @@ int do_params(char *file_or_dir_name)
     
     if(print_it == YES){
     
-        fprintf(stdout, "%s\n", file_or_dir_name);
+        fprintf(stdout, "%s%s\n", fullpath, file_or_dir_name);
 
     }
     

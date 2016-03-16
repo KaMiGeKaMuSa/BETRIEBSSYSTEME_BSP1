@@ -208,44 +208,46 @@ void do_dir(const char * dir_name, const char * parms, int parms_length,const ch
 		//if (strcmp(dir_element->d_name, "..") == 0) continue;
 		//if (strcmp(dir_element->d_name, ".") == 0 && strcmp(fullpath, argv[1]) == 0) continue;
 		
-        //initialise i and reset i
-        int i = 0;
+        	//initialise i and reset i
+        	int i = 0;
 
         
-        // IF  RETURN OF CHECK PARAM IS NOT 1 ==> * Returns 1 = no params in Stack
-        if(check_params_return != 1)
-        {
-                for(i=0;i<=save_stackcount;i++)
-                    {
+        	// IF  RETURN OF CHECK PARAM IS NOT 1 ==> * Returns 1 = no params in Stack
+        	if(check_params_return != 1)
+        	{
+                	for(i=0;i<=save_stackcount;i++)
+                    	{
                             int help_return= do_params(dir_element->d_name);
 
                             if (help_return == 1 ) { //do_params() returns 1 == print imediately because of -ls or -print
                                     fprintf(stdout, "%s%s\n", fullpath, dir_element->d_name);
                                 }
             
-                    }
+                    	}
         
-            if(stack_count == 0)
-            {
-            check_params(parms_length, argv);
-            }
+            		if(stack_count == 0)
+            		{
+            			check_params(parms_length, argv);
+            		}
         
-        }
-        else
-        {
-            fprintf(stdout, "%s%s\n", fullpath, dir_element->d_name);
-        }
+        	}
+	        else
+        	{
+            		fprintf(stdout, "%s%s\n", fullpath, dir_element->d_name);
+        	}
 		
 		
 		//MM: rekursives aufrufen der do_dir damit man in die directory reingehen kann:
 		printf("which_location: %d\n", which_location(dir_element->d_name));
-        if (which_location(dir_element->d_name) == 2 && strcmp(dir_element->d_name, ".") != 0 && strcmp(dir_element->d_name, "..") != 0){
-			printf("test");
+        	if (dir_element->d_type == DT_DIR) {
+            		printf("test\n");
+            		if (strcmp(dir_element->d_name, ".") == 0 || strcmp(dir_element->d_name, "..") == 0)
+                		continue;
 			strcat(fullpath,dir_element->d_name);
 			//strcat(fullpath, "/");
 			do_dir(dir_element->d_name, parms,parms_length,argv, check_params_return);
 		}
-    }
+    	}
 	
 	fullpath[strlen(fullpath)-strlen(dir_name)-1] = '\0';
 		

@@ -254,6 +254,7 @@ void do_dir(const char * dir_name, const char * parms, int parms_length,const ch
 }
 
 // MM:
+/*
 void check_print(const char * file_name, const char * parms, int parms_length){
 	
 	// for schleife über stack
@@ -280,7 +281,7 @@ void check_print(const char * file_name, const char * parms, int parms_length){
 		}
 	}
 }
-
+*/
 
 /**
  * check_params()
@@ -460,6 +461,19 @@ int check_params(int argc, const char * argv[])
 int which_location(const char *locationName)
 {
     struct stat which_entry;
+    
+    FILE * fp;
+    
+    //opens up file pointer readable
+    fp = fopen(locationName, "r");
+    
+    if (fp == NULL)
+    {
+        fprintf(stderr,"Error file_o_dir() fopen()");
+        return -1;
+    }
+
+    
 	if ( fullpath != NULL) {
 		char * tempStr = (char *) malloc(1 + strlen(fullpath)+ strlen(locationName) );
 		strcpy(tempStr, fullpath);
@@ -476,6 +490,19 @@ int which_location(const char *locationName)
     
     
     //check which location it is
+    if(S_ISREG(which_entry.st_mode)){        (void) fclose(fp);      return 1;}  //"ordinary file"
+    else if(S_ISDIR(which_entry.st_mode)){   (void) fclose(fp);      return 2;}  //"directory"
+    else if(S_ISCHR(which_entry.st_mode)){   (void) fclose(fp);      return 3;}  //"text orientated DEVICE"
+    else if(S_ISBLK(which_entry.st_mode)){   (void) fclose(fp);      return 4;}  //"block orientated DEVICE"
+    else if(S_ISFIFO(which_entry.st_mode)){  (void) fclose(fp);      return 5;}  //"pipe"
+    else if(S_ISLNK(which_entry.st_mode)){   (void) fclose(fp);      return 6;}  //"symbolic link";
+    else if(S_ISSOCK(which_entry.st_mode)){  (void) fclose(fp);      return 7;}  //"socket"
+    else{                                    (void) fclose(fp);      return -1;} //"undef"
+    
+
+    
+    /*
+    //check which location it is
     if(S_ISREG(which_entry.st_mode)){        return 1;}  //"ordinary file"
     else if(S_ISDIR(which_entry.st_mode)){   return 2;}  //"directory"
     else if(S_ISCHR(which_entry.st_mode)){   return 3;}  //"text orientated DEVICE"
@@ -484,6 +511,9 @@ int which_location(const char *locationName)
     else if(S_ISLNK(which_entry.st_mode)){   return 6;}  //"symbolic link";
     //else if(S_ISSOCK(which_entry.st_mode)){  (void) fclose(fp);      return 7;}  //"socket"
     else{                                    return -1;} //"undef"
+    
+    */
+    
     
 }
 
@@ -933,10 +963,6 @@ int do_params(char *file_or_dir_name)
         }
         
         
-        
-        /*
-        //
-        // GS: -- ATTENTION -- WHICH LOCATION HAS TO BE UPDATE --> SOCKET RETURN MUST BE IMPLEMENTED AGAIN
         //WHEN socket, THEN---------------------------------------s
         if(strcmp("s", param_list->s_option) == 0)
         {
@@ -946,14 +972,14 @@ int do_params(char *file_or_dir_name)
                 print_it = YES;
             }
             else{
+                print_it = NO;
                 // returns 2 == not print this line
                 return 2;
             }
             
             
         }
-        */
-        
+
         
         
     }

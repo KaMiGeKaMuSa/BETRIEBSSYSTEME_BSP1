@@ -103,9 +103,9 @@ void check_print(const char * file_name, const char * parms, int parms_length);
 ///Functions for HELP
 int check_params(int argc, const char * argv[]);
 int check_param_options(const char * argv[], int aktiv_param_index);
-int do_params(char *file_or_dir_name, yes_no* print_it, yes_no* is_print_param);
+int do_params(char *file_or_dir_name, yes_no* print_it, yes_no* is_filter, yes_no* is_print_param);
 int which_location(const char *locationName);
-void check_next_param(yes_no* is_print_param);
+void check_next_param(yes_no* is_filter);
 void view_help(void);
 
 
@@ -172,8 +172,9 @@ void do_file(const char * file_name, const char * parms, int parms_length, const
         do_dir(file_name, parms,parms_length,argv, check_params_return);
     }
     
-    yes_no is_print_param = NO;
-    int help_return= do_params((char*)file_name, &print_it, &is_print_param);
+    yes_no is_filter = NO;
+	yes_no is_param_filter = NO;
+    int help_return= do_params((char*)file_name, &print_it, &is_filter, &is_param_filter);
     
 
     if (help_return == 1) { //do_params() returns 1 == print imediately because of -ls or -print
@@ -218,9 +219,9 @@ void do_dir(const char * dir_name, const char * parms, int parms_length,const ch
     }
 	
     int save_stackcount = stack_count;
-    
+
 	while ((dir_element = readdir(dir_object)) && dir_element) {
-        
+
 		char * tempStr = (char *) malloc(1 + strlen("/")+ strlen(argv[1]) );
 		strcpy(tempStr, "/");
 		strcat(tempStr, argv[1]);
@@ -240,18 +241,19 @@ void do_dir(const char * dir_name, const char * parms, int parms_length,const ch
         	{
     
                 yes_no print_it = NO;
-                yes_no is_print_param = NO;
-        	    
+                yes_no is_filter = NO;
+				yes_no is_print_param = NO;
+
                 	for(i=0;i<=save_stackcount;i++)
                     	{
-                            int help_return= do_params(dir_element->d_name, &print_it, &is_print_param);
+                            int help_return= do_params(dir_element->d_name, &print_it, &is_filter, &is_print_param);
                             
-                            if(print_it == NO){
+                            if(print_it == NO && is_print_param == NO){
                                 break;   
                             }
             
                     	}
-                    	
+                    	        	    
                     //OVER-ALL-PRINT -> PRINT WENN EVERYTHING LOOKS GOOD
                     if(print_it == YES)
                     {
@@ -269,15 +271,15 @@ void do_dir(const char * dir_name, const char * parms, int parms_length,const ch
             		fprintf(stdout, "%s%s\n", fullpath, dir_element->d_name);
         	}
 		
-		
 		//MM: rekursives aufrufen der do_dir damit man in die directory reingehen kann:
 		//printf("which_location: %d\n", which_location(dir_element->d_name));
         	if (which_location(dir_element->d_name) == 2) {
             		if (strcmp(dir_element->d_name, ".") == 0 || strcmp(dir_element->d_name, "..") == 0)
                 		continue;
 				strcat(fullpath,dir_element->d_name);
-				//strcat(fullpath, "/");
+														
 				do_dir(fullpath, parms,parms_length,argv, check_params_return);
+										
 			}
     	}
 	
@@ -842,7 +844,7 @@ int pop ()
 // returns 2 == not print this line
 // returns 3 == Stack is Empty
 
-int do_params(char *file_or_dir_name, yes_no* print_it, yes_no* is_print_param)
+int do_params(char *file_or_dir_name, yes_no* print_it, yes_no* is_filter, yes_no* is_print_param)
 {
     
     
@@ -852,12 +854,12 @@ int do_params(char *file_or_dir_name, yes_no* print_it, yes_no* is_print_param)
         return 3;
     }
     
-    
+                
     //-------------------------------------------------------------------------------------------TYPE_PARAM
     if(strcmp(allowed_params[TYPE_PARAM], param_list->s_parameter) == 0)
     {
         //char * allowed_options[]={"b","c","d","p","f","l","s", NULL};
-        check_next_param(is_print_param);
+        check_next_param(is_filter);
 
         
         //WHEN FILE, THEN---------------------------------------f
@@ -990,7 +992,7 @@ int do_params(char *file_or_dir_name, yes_no* print_it, yes_no* is_print_param)
     //-------------------------------------------------------------------------------------------NAME_PARAM
     if(strcmp(allowed_params[NAME_PARAM], param_list->s_parameter) == 0)
     {
-        check_next_param(is_print_param);
+        check_next_param(is_filter);
         
 		if (fnmatch(param_list->s_option, file_or_dir_name, 0) == 0) { *print_it = YES; }
 			else {
@@ -1003,7 +1005,7 @@ int do_params(char *file_or_dir_name, yes_no* print_it, yes_no* is_print_param)
     //-------------------------------------------------------------------------------------------USER_PARAM
     if(strcmp(allowed_params[USER_PARAM], param_list->s_parameter) == 0)
     {
-        check_next_param(is_print_param);
+        check_next_param(is_filter);
         
         
         
@@ -1020,14 +1022,15 @@ int do_params(char *file_or_dir_name, yes_no* print_it, yes_no* is_print_param)
     //-------------------------------------------------------------------------------------------PRINT_PARAM
     if(strcmp(allowed_params[PRINT_PARAM], param_list->s_parameter) == 0)
     {
-        if (*is_print_param == NO) { //do_params() returns 1 == print imediately because of -ls or -print
+        if (*is_filter == NO) { //do_params() returns 1 == print imediately because of -ls or -print
                                     
             //check if -print of -ls in stack, only print immediately if no -print/-ls found (like in real find)
             *print_it == NO;
+			*is_print_param = YES;
             fprintf(stdout, "%s%s\n", fullpath, file_or_dir_name);
         }
 
-        *is_print_param = NO;
+        *is_filter = NO;
      
         //POP FOR NEXT PARAMETER
         pop();
@@ -1040,41 +1043,47 @@ int do_params(char *file_or_dir_name, yes_no* print_it, yes_no* is_print_param)
     //-------------------------------------------------------------------------------------------LS_PARAM
     if(strcmp(allowed_params[LS_PARAM], param_list->s_parameter) == 0)
     {
-		struct stat sb;
-		char outputString;
-		struct tm *tmp;
-		char outstr[200];
+		if (*is_filter == NO) { 
+			*print_it == NO;
+			*is_print_param = YES;
+			
+			struct stat sb;
+			char outputString;
+			struct tm *tmp;
+			char outstr[200];
 
-		stat(file_or_dir_name, &sb);
-	
-		struct passwd *pw = getpwuid(sb.st_uid);
-		struct group  *gr = getgrgid(sb.st_gid);
+			stat(file_or_dir_name, &sb);
+					
+			struct passwd *pw = getpwuid(sb.st_uid);
+			struct group  *gr = getgrgid(sb.st_gid);
+			
+			tmp = localtime(&sb.st_mtime);
+			strftime(outstr, sizeof(outstr), "%b %d %H:%M", tmp);
+				
+			printf("%6ld %4lld %s%s%s%s%s%s%s%s%s%s %3lld %s %s %8ld %s %s%s\n", 
+				(long) sb.st_ino, 
+				(long long) sb.st_blocks / 2, 
+					(S_ISDIR(sb.st_mode)) ? "d" : "-", 
+					(sb.st_mode & S_IRUSR) ? "r" : "-",
+					(sb.st_mode & S_IWUSR) ? "w" : "-",
+					(sb.st_mode & S_IXUSR) ? "x" : "-",
+					(sb.st_mode & S_IRGRP) ? "r" : "-",
+					(sb.st_mode & S_IWGRP) ? "w" : "-",
+					(sb.st_mode & S_IXGRP) ? "x" : "-",
+					(sb.st_mode & S_IROTH) ? "r" : "-",
+					(sb.st_mode & S_IWOTH) ? "w" : "-",
+					(sb.st_mode & S_IXOTH) ? "x" : "-",
+				(long long) sb.st_nlink,
+				(pw != NULL) ? pw->pw_name : "-",
+				(gr != NULL) ? gr->gr_name : "-",
+				sb.st_size,
+				outstr,
+				fullpath, 
+				file_or_dir_name
+				);
+		}
 		
-		tmp = localtime(&sb.st_mtime);
-		strftime(outstr, sizeof(outstr), "%b %d %H:%M", tmp);
-		    
-		printf("%6ld %4lld %s%s%s%s%s%s%s%s%s%s %3lld %s %s %8ld %s %s%s\n", 
-			(long) sb.st_ino, 
-			(long long) sb.st_blocks / 2, 
-				(S_ISDIR(sb.st_mode)) ? "d" : "-", 
-				(sb.st_mode & S_IRUSR) ? "r" : "-",
-				(sb.st_mode & S_IWUSR) ? "w" : "-",
-				(sb.st_mode & S_IXUSR) ? "x" : "-",
-				(sb.st_mode & S_IRGRP) ? "r" : "-",
-				(sb.st_mode & S_IWGRP) ? "w" : "-",
-				(sb.st_mode & S_IXGRP) ? "x" : "-",
-				(sb.st_mode & S_IROTH) ? "r" : "-",
-				(sb.st_mode & S_IWOTH) ? "w" : "-",
-				(sb.st_mode & S_IXOTH) ? "x" : "-",
-			(long long) sb.st_nlink,
-			pw->pw_name,
-			gr->gr_name,
-			sb.st_size,
-			outstr,
-			fullpath, 
-			file_or_dir_name
-			);
-		
+		*is_filter = NO;
         //POP FOR NEXT PARAMETER
         pop();
         
@@ -1088,7 +1097,7 @@ int do_params(char *file_or_dir_name, yes_no* print_it, yes_no* is_print_param)
     {
 			struct stat buf;
 			
-			check_next_param(is_print_param);
+			check_next_param(is_filter);
         
 			if (stat((const char*)file_or_dir_name, &buf) != 0) {
 
@@ -1112,7 +1121,7 @@ int do_params(char *file_or_dir_name, yes_no* print_it, yes_no* is_print_param)
     //-------------------------------------------------------------------------------------------PATH_PARAM
     if(strcmp(allowed_params[PATH_PARAM], param_list->s_parameter) == 0)
     {
-        check_next_param(is_print_param);
+        check_next_param(is_filter);
         
 		char * tempStr = (char *) malloc(1 + strlen(fullpath)+ strlen(file_or_dir_name) );
 		strcpy(tempStr, fullpath);
@@ -1135,12 +1144,13 @@ int do_params(char *file_or_dir_name, yes_no* print_it, yes_no* is_print_param)
     return 0;
 }
 
-void check_next_param(yes_no* is_print_param){
+void check_next_param(yes_no* is_filter){
     if (param_list->s_next_param != NULL){
-        if(strcmp(allowed_params[PRINT_PARAM], param_list->s_next_param->s_parameter) == 0){
-            *is_print_param = YES;
+        if(strcmp(allowed_params[PRINT_PARAM], param_list->s_next_param->s_parameter) == 0 ||
+			strcmp(allowed_params[LS_PARAM], param_list->s_next_param->s_parameter) == 0){
+            *is_filter = YES;
         }else{
-            *is_print_param = NO;
+            *is_filter = NO;
         }
     }
 }

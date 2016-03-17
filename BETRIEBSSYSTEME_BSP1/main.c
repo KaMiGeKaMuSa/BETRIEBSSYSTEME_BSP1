@@ -3,17 +3,17 @@
  * myfind
  * Beispiel 1
  *
- * @author Karin Kalman <icb150!!@technikum-wien.at>
- * @author Michael Mueller <icb15028@technikum-wien.at>
- * @author Gerhard Sabeditsch <icb150!!@technikum-wien.at>
- * @date 2016/03/17
+ * @author Karin Kalman <karin.kalman@technikum-wien.at>
+ * @author Michael Mueller <michael.mueller@technikum-wien.at>
+ * @author Gerhard Sabeditsch <gerhard.sabeditsch@technikum-wien.at>
+ * @date 2016/02/13
  *
  * @version $Revision: 0 $
  *
  *
  * URL: $HeadURL$
  *
- * Last Modified: $Author: Michael $
+ * Last Modified: $Author: Gerhard $
  */
 
 /*
@@ -103,8 +103,9 @@ void check_print(const char * file_name, const char * parms, int parms_length);
 ///Functions for HELP
 int check_params(int argc, const char * argv[]);
 int check_param_options(const char * argv[], int aktiv_param_index);
-int do_params(char *file_or_dir_name, yes_no* print_it);
+int do_params(char *file_or_dir_name, yes_no* print_it, yes_no* is_print_param);
 int which_location(const char *locationName);
+void check_next_param(yes_no* is_print_param);
 void view_help(void);
 
 
@@ -131,13 +132,13 @@ int main(int argc, const char * argv[]) {
     }
 	
     //TEST ---  overview about the given parameters
-    printf("\ncheck_params() number of parameters exclusive programm_itself are: %d\n", argc -1); //FOR TEST
+    //printf("\ncheck_params() number of parameters exclusive programm_itself are: %d\n", argc -1); //FOR TEST
 
-    int i;
+    /*int i;
     for (i = 1; i < argc; i++)
      {
      printf("\ncheck_params() Param %d =  %s\n", i, argv[i]);
-     }
+     }*/
     
     
 		// if directory then go to do_dir
@@ -171,8 +172,8 @@ void do_file(const char * file_name, const char * parms, int parms_length, const
         do_dir(file_name, parms,parms_length,argv, check_params_return);
     }
     
-    
-    int help_return= do_params((char*)file_name, &print_it);
+    yes_no is_print_param = NO;
+    int help_return= do_params((char*)file_name, &print_it, &is_print_param);
     
 
     if (help_return == 1) { //do_params() returns 1 == print imediately because of -ls or -print
@@ -239,14 +240,11 @@ void do_dir(const char * dir_name, const char * parms, int parms_length,const ch
         	{
     
                 yes_no print_it = NO;
+                yes_no is_print_param = NO;
         	    
                 	for(i=0;i<=save_stackcount;i++)
                     	{
-                            int help_return= do_params(dir_element->d_name, &print_it);
-
-                            if (help_return == 1 ) { //do_params() returns 1 == print imediately because of -ls or -print
-                                    fprintf(stdout, "%s%s\n", fullpath, dir_element->d_name);
-                            }
+                            int help_return= do_params(dir_element->d_name, &print_it, &is_print_param);
                             
                             if(print_it == NO){
                                 break;   
@@ -255,10 +253,9 @@ void do_dir(const char * dir_name, const char * parms, int parms_length,const ch
                     	}
                     	
                     //OVER-ALL-PRINT -> PRINT WENN EVERYTHING LOOKS GOOD
-                    if(print_it == YES){
-                    
+                    if(print_it == YES)
+                    {
                         fprintf(stdout, "%s%s\n", fullpath, dir_element->d_name);
-                
                     }
         
             		if(stack_count == 0)
@@ -845,7 +842,7 @@ int pop ()
 // returns 2 == not print this line
 // returns 3 == Stack is Empty
 
-int do_params(char *file_or_dir_name, yes_no* print_it)
+int do_params(char *file_or_dir_name, yes_no* print_it, yes_no* is_print_param)
 {
     
     
@@ -859,10 +856,10 @@ int do_params(char *file_or_dir_name, yes_no* print_it)
     //-------------------------------------------------------------------------------------------TYPE_PARAM
     if(strcmp(allowed_params[TYPE_PARAM], param_list->s_parameter) == 0)
     {
-        
         //char * allowed_options[]={"b","c","d","p","f","l","s", NULL};
+        check_next_param(is_print_param);
 
-
+        
         //WHEN FILE, THEN---------------------------------------f
         if(strcmp("f", param_list->s_option) == 0)
         {
@@ -993,6 +990,8 @@ int do_params(char *file_or_dir_name, yes_no* print_it)
     //-------------------------------------------------------------------------------------------NAME_PARAM
     if(strcmp(allowed_params[NAME_PARAM], param_list->s_parameter) == 0)
     {
+        check_next_param(is_print_param);
+        
 		if (fnmatch(param_list->s_option, file_or_dir_name, 0) == 0) { *print_it = YES; }
 			else {
 				*print_it = NO; // returns 2 == not print this line 
@@ -1004,7 +1003,7 @@ int do_params(char *file_or_dir_name, yes_no* print_it)
     //-------------------------------------------------------------------------------------------USER_PARAM
     if(strcmp(allowed_params[USER_PARAM], param_list->s_parameter) == 0)
     {
-        
+        check_next_param(is_print_param);
         
         
         
@@ -1021,11 +1020,19 @@ int do_params(char *file_or_dir_name, yes_no* print_it)
     //-------------------------------------------------------------------------------------------PRINT_PARAM
     if(strcmp(allowed_params[PRINT_PARAM], param_list->s_parameter) == 0)
     {
+        if (*is_print_param == NO || *print_it == YES) { //do_params() returns 1 == print imediately because of -ls or -print
+                                    
+            //check if -print of -ls in stack, only print immediately if no -print/-ls found (like in real find)
+            *print_it == NO;
+            fprintf(stdout, "%s%s\n", fullpath, file_or_dir_name);
+        }
+
+        *is_print_param = NO;
+     
         //POP FOR NEXT PARAMETER
         pop();
-
-        return 1;
-        
+           
+        return 0;
     }
     
 
@@ -1079,8 +1086,9 @@ int do_params(char *file_or_dir_name, yes_no* print_it)
     //-------------------------------------------------------------------------------------------NOUSER_PARAM
     if(strcmp(allowed_params[NOUSER_PARAM], param_list->s_parameter) == 0)
     {
-
 			struct stat buf;
+			
+			check_next_param(is_print_param);
         
 			if (stat((const char*)file_or_dir_name, &buf) != 0) {
 
@@ -1104,7 +1112,8 @@ int do_params(char *file_or_dir_name, yes_no* print_it)
     //-------------------------------------------------------------------------------------------PATH_PARAM
     if(strcmp(allowed_params[PATH_PARAM], param_list->s_parameter) == 0)
     {
-        //mit path wird der ganze Pfad der Datei mit dem jeweiligen Pattern überprüft (fnmatch!!)
+        check_next_param(is_print_param);
+        
 		char * tempStr = (char *) malloc(1 + strlen(fullpath)+ strlen(file_or_dir_name) );
 		strcpy(tempStr, fullpath);
 		strcat(tempStr, file_or_dir_name);
@@ -1126,7 +1135,15 @@ int do_params(char *file_or_dir_name, yes_no* print_it)
     return 0;
 }
 
-
+void check_next_param(yes_no* is_print_param){
+    if (param_list->s_next_param != NULL){
+        if(strcmp(allowed_params[PRINT_PARAM], param_list->s_next_param->s_parameter) == 0){
+            *is_print_param = YES;
+        }else{
+            *is_print_param = NO;
+        }
+    }
+}
 
 
 

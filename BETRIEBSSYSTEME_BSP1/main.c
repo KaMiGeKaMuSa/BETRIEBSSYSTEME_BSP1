@@ -3,17 +3,17 @@
  * myfind
  * Beispiel 1
  *
- * @author Karin Kalman <karin.kalman@technikum-wien.at>
- * @author Michael Mueller <michael.mueller@technikum-wien.at>
- * @author Gerhard Sabeditsch <gerhard.sabeditsch@technikum-wien.at>
- * @date 2016/02/13
+ * @author Karin Kalman <icb150!!@technikum-wien.at>
+ * @author Michael Mueller <icb15028@technikum-wien.at>
+ * @author Gerhard Sabeditsch <icb150!!@technikum-wien.at>
+ * @date 2016/03/17
  *
  * @version $Revision: 0 $
  *
  *
  * URL: $HeadURL$
  *
- * Last Modified: $Author: Gerhard $
+ * Last Modified: $Author: Michael $
  */
 
 /*
@@ -71,6 +71,7 @@ typedef struct param_stack {
     struct param_stack * s_next_param;
     
 }param_stack;
+typedef enum yes_no {YES,NO}yes_no;
 
 
 param_stack * param_list = NULL;
@@ -102,7 +103,7 @@ void check_print(const char * file_name, const char * parms, int parms_length);
 ///Functions for HELP
 int check_params(int argc, const char * argv[]);
 int check_param_options(const char * argv[], int aktiv_param_index);
-int do_params(char *file_or_dir_name);
+int do_params(char *file_or_dir_name, yes_no* print_it);
 int which_location(const char *locationName);
 void view_help(void);
 
@@ -164,14 +165,14 @@ void do_file(const char * file_name, const char * parms, int parms_length, const
 		
     
     //check_print(file_name, parms,parms_length);
-    
+    yes_no print_it = NO;
     
     if (which_location(file_name) == 2){
         do_dir(file_name, parms,parms_length,argv, check_params_return);
     }
     
     
-    int help_return= do_params((char*)file_name);
+    int help_return= do_params((char*)file_name, &print_it);
     
 
     if (help_return == 1) { //do_params() returns 1 == print imediately because of -ls or -print
@@ -181,6 +182,13 @@ void do_file(const char * file_name, const char * parms, int parms_length, const
     //When stack is empty -- default print
     if (help_return == 3){
         fprintf(stdout, "%s\n", file_name);
+    }
+    
+    //OVER-ALL-PRINT -> PRINT WENN EVERYTHING LOOKS GOOD
+    if(print_it == YES){
+    
+        fprintf(stdout, "%s%s\n", fullpath, file_name);
+
     }
 
 }
@@ -229,15 +237,29 @@ void do_dir(const char * dir_name, const char * parms, int parms_length,const ch
         	// IF  RETURN OF CHECK PARAM IS NOT 1 ==> * Returns 1 = no params in Stack
         	if(check_params_return != 1)
         	{
+    
+                yes_no print_it = NO;
+        	    
                 	for(i=0;i<=save_stackcount;i++)
                     	{
-                            int help_return= do_params(dir_element->d_name);
+                            int help_return= do_params(dir_element->d_name, &print_it);
 
                             if (help_return == 1 ) { //do_params() returns 1 == print imediately because of -ls or -print
                                     fprintf(stdout, "%s%s\n", fullpath, dir_element->d_name);
-                                }
+                            }
+                            
+                            if(print_it == NO){
+                                break;   
+                            }
             
                     	}
+                    	
+                    //OVER-ALL-PRINT -> PRINT WENN EVERYTHING LOOKS GOOD
+                    if(print_it == YES){
+                    
+                        fprintf(stdout, "%s%s\n", fullpath, dir_element->d_name);
+                
+                    }
         
             		if(stack_count == 0)
             		{
@@ -823,12 +845,8 @@ int pop ()
 // returns 2 == not print this line
 // returns 3 == Stack is Empty
 
-int do_params(char *file_or_dir_name)
+int do_params(char *file_or_dir_name, yes_no* print_it)
 {
-    
-    typedef enum yes_no {YES,NO}yes_no;
-    
-    yes_no print_it = NO;
     
     
     //Check if Steck is empty
@@ -851,10 +869,10 @@ int do_params(char *file_or_dir_name)
         
             //IF IT's CORRECT, THEN PRINT_IT = YES
             if( which_location((const char*)file_or_dir_name) == 1) { //*  which:location  return 1  -->   "ordinary file"
-                print_it = YES;
+                *print_it = YES;
             }
             else{
-                print_it = NO;
+                *print_it = NO;
                 // returns 2 == not print this line
                 return 2;
             }
@@ -868,10 +886,10 @@ int do_params(char *file_or_dir_name)
             
             //IF IT's CORRECT, THEN PRINT_IT = YES
             if( which_location((const char*)file_or_dir_name) == 2) { //*  which:location  return 2  -->   "directory"
-                print_it = YES;
+                *print_it = YES;
             }
             else{
-                print_it = NO;
+                *print_it = NO;
                 // returns 2 == not print this line
                 return 2;
             }
@@ -885,10 +903,10 @@ int do_params(char *file_or_dir_name)
             
             //IF IT's CORRECT, THEN PRINT_IT = YES
             if( which_location((const char*)file_or_dir_name) == 3) { //*  which:location  return 3  -->   "text orientated DEVICE"
-                print_it = YES;
+                *print_it = YES;
             }
             else{
-                print_it = NO;
+                *print_it = NO;
                 // returns 2 == not print this line
                 return 2;
             }
@@ -903,10 +921,10 @@ int do_params(char *file_or_dir_name)
             
             //IF IT's CORRECT, THEN PRINT_IT = YES
             if( which_location((const char*)file_or_dir_name) == 4) { //*  which:location  return 4  -->   "block oriented DEVICE"
-                print_it = YES;
+                *print_it = YES;
             }
             else{
-                print_it = NO;
+                *print_it = NO;
                 // returns 2 == not print this line
                 return 2;
             }
@@ -920,10 +938,10 @@ int do_params(char *file_or_dir_name)
             
             //IF IT's CORRECT, THEN PRINT_IT = YES
             if( which_location((const char*)file_or_dir_name) == 5) { //*  which:location  return 5  -->   "pipe"
-                print_it = YES;
+                *print_it = YES;
             }
             else{
-                print_it = NO;
+                *print_it = NO;
                 // returns 2 == not print this line
                 return 2;
             }
@@ -938,10 +956,10 @@ int do_params(char *file_or_dir_name)
             
             //IF IT's CORRECT, THEN PRINT_IT = YES
             if( which_location((const char*)file_or_dir_name) == 6) { //*  which:location  return 6  -->   "symbolic link";
-                print_it = YES;
+                *print_it = YES;
             }
             else{
-                print_it = NO;
+                *print_it = NO;
                 // returns 2 == not print this line
                 return 2;
             }
@@ -956,10 +974,10 @@ int do_params(char *file_or_dir_name)
             
             //IF IT's CORRECT, THEN PRINT_IT = YES
             if( which_location((const char*)file_or_dir_name) == 7) {
-                print_it = YES;
+                *print_it = YES;
             }
             else{
-                print_it = NO;
+                *print_it = NO;
                 // returns 2 == not print this line
                 return 2;
             }
@@ -975,9 +993,9 @@ int do_params(char *file_or_dir_name)
     //-------------------------------------------------------------------------------------------NAME_PARAM
     if(strcmp(allowed_params[NAME_PARAM], param_list->s_parameter) == 0)
     {
-		if (fnmatch(param_list->s_option, file_or_dir_name, 0) == 0) { print_it = YES; }
+		if (fnmatch(param_list->s_option, file_or_dir_name, 0) == 0) { *print_it = YES; }
 			else {
-				print_it = NO; // returns 2 == not print this line 
+				*print_it = NO; // returns 2 == not print this line 
 			return 2; } 
     }
     
@@ -1071,10 +1089,10 @@ int do_params(char *file_or_dir_name)
 			}
 
 			if (getpwuid(buf.st_uid) == NULL) {
-				print_it = YES;
+				*print_it = YES;
 			}
 			else {
-				print_it = NO;
+				*print_it = NO;
 				// returns 2 == not print this line
 				return 2;
             }
@@ -1091,9 +1109,9 @@ int do_params(char *file_or_dir_name)
 		strcpy(tempStr, fullpath);
 		strcat(tempStr, file_or_dir_name);
 		
-		if (fnmatch(param_list->s_option, tempStr, 0) == 0) { print_it = YES; }
+		if (fnmatch(param_list->s_option, tempStr, 0) == 0) { *print_it = YES; }
 			else {
-				print_it = NO; // returns 2 == not print this line 
+				*print_it = NO; // returns 2 == not print this line 
 			return 2; } 
 			
 		free(tempStr);
@@ -1104,15 +1122,6 @@ int do_params(char *file_or_dir_name)
     
     //POP FOR NEXT PARAMETER
     pop();
-    
-    
-    //OVER-ALL-PRINT -> PRINT WENN EVERYTHING LOOKS GOOD
-    
-    if(print_it == YES){
-    
-        fprintf(stdout, "%s%s\n", fullpath, file_or_dir_name);
-
-    }
     
     return 0;
 }

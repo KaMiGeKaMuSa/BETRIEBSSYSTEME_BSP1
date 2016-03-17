@@ -1020,7 +1020,7 @@ int do_params(char *file_or_dir_name, yes_no* print_it, yes_no* is_print_param)
     //-------------------------------------------------------------------------------------------PRINT_PARAM
     if(strcmp(allowed_params[PRINT_PARAM], param_list->s_parameter) == 0)
     {
-        if (*is_print_param == NO || *print_it == YES) { //do_params() returns 1 == print imediately because of -ls or -print
+        if (*is_print_param == NO) { //do_params() returns 1 == print imediately because of -ls or -print
                                     
             //check if -print of -ls in stack, only print immediately if no -print/-ls found (like in real find)
             *print_it == NO;

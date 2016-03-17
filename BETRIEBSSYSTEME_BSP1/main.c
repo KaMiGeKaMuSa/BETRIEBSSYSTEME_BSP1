@@ -90,11 +90,6 @@ extern int errno ;
 /*
  * ------------------------------------------------------------- functions --
  */
-
-/// Vorgegeben sind 2 Grundfunktionen
-///do_file und do_dir
-
-
 void do_file(const char * file_name, const char * parms, int parms_length,const char * argv[],int check_params_return);
 void do_dir(const char * dir_name, const char * parms, int parms_length,const char * argv[], int check_params_return);
 void check_print(const char * file_name, const char * parms, int parms_length);
@@ -103,12 +98,13 @@ void check_print(const char * file_name, const char * parms, int parms_length);
 ///Functions for HELP
 int check_params(int argc, const char * argv[]);
 int check_param_options(const char * argv[], int aktiv_param_index);
-int do_params(char *file_or_dir_name, yes_no* print_it, yes_no* is_filter, yes_no* is_print_param);
+int do_params(char *file_or_dir_name, yes_no* print_it, yes_no* is_filter, yes_no* is_print_param, yes_no* default_ls);
 int which_location(const char *locationName);
 void check_next_param(yes_no* is_filter);
+void ls_output(char *file_or_dir_name);
 void view_help(void);
 
-
+///Stackfunctions
 param_stack * search_empty (param_stack * param_list);
 int push(const char * param,const char * option);
 int pop();
@@ -130,42 +126,29 @@ int main(int argc, const char * argv[]) {
         fprintf(stderr, "out of memory!\n");
         exit(1);
     }
-	
-    //TEST ---  overview about the given parameters
-    //printf("\ncheck_params() number of parameters exclusive programm_itself are: %d\n", argc -1); //FOR TEST
-
-    /*int i;
-    for (i = 1; i < argc; i++)
-     {
-     printf("\ncheck_params() Param %d =  %s\n", i, argv[i]);
-     }*/
     
     
-		// if directory then go to do_dir
-        if (which_location(argv[1]) == 2) {
-			strcpy(fullpath,argv[1]);
-           do_dir(argv[1], argv[2], argc, argv,check_params_return);
-        }
-        // if file then go to do_file
-        else {
-			do_file(argv[1], argv[2], argc, argv,check_params_return);
-        }
+	// if directory then go to do_dir
+	if (which_location(argv[1]) == 2) {
+		strcpy(fullpath,argv[1]);
+	   do_dir(argv[1], argv[2], argc, argv,check_params_return);
+	}
+	// if file then go to do_file
+	else {
+		do_file(argv[1], argv[2], argc, argv,check_params_return);
+	}
 
     
     return 0;
 }
 
-// MM:
+
+/**
+ * do_file(const char * file_name, const char * parms, int parms_length, const char * argv[], int check_params_return)
+ *
+ * no return value
+ */
 void do_file(const char * file_name, const char * parms, int parms_length, const char * argv[], int check_params_return){
-    // File auf alle Parameter überprüfen und ausgeben wenn nötig =>
-	// Schleife for(int i = 0; i < parms.length; i++)
-	// if (parms[i] == aktion1){ } else if (parms[i] == aktion2) {}.....
-	// Wenn aktion einen zweiten Parameter braucht z.B. -user	<name> dann muss i=i+1 am schluß damit <name> nicht als eigene aktion ausgewertet wird
-	// Wenn eine aktion/filter nicht mit dem file übereinstimmt dann setze Flag isValid auf 0 (false) und Schleife über die restlichen Parameter kann abgebrochen werden
-	// Nachdem Schleife alle Parameter für das File überprüft hat check Flag isValid und printf wenn true
-		
-    
-    //check_print(file_name, parms,parms_length);
     yes_no print_it = NO;
     
     if (which_location(file_name) == 2){
@@ -174,33 +157,33 @@ void do_file(const char * file_name, const char * parms, int parms_length, const
     
     yes_no is_filter = NO;
 	yes_no is_param_filter = NO;
-    int help_return= do_params((char*)file_name, &print_it, &is_filter, &is_param_filter);
+	yes_no default_ls = NO;
+	
+    int help_return= do_params((char*)file_name, &print_it, &is_filter, &is_param_filter, &default_ls);
     
-
-    if (help_return == 1) { //do_params() returns 1 == print imediately because of -ls or -print
-        fprintf(stdout, "%s\n", file_name);
-    }
-
     //When stack is empty -- default print
     if (help_return == 3){
         fprintf(stdout, "%s\n", file_name);
     }
     
     //OVER-ALL-PRINT -> PRINT WENN EVERYTHING LOOKS GOOD
-    if(print_it == YES){
-    
-        fprintf(stdout, "%s%s\n", fullpath, file_name);
-
-    }
-
+	if(print_it == YES)
+	{
+		if(default_ls == YES){
+			ls_output((char*)file_name);
+		}else{
+			fprintf(stdout, "%s%s\n", fullpath, file_name);
+		}
+	}
 }
 
-//MM:
+
+/**
+ * do_dir(const char * dir_name, const char * parms, int parms_length,const char * argv[], int check_params_return)
+ *
+ * no return value
+ */
 void do_dir(const char * dir_name, const char * parms, int parms_length,const char * argv[], int check_params_return){
-    // Schleife über alle Elemente des dir_name
-	// . und .. überspringen da sonst Endlosschleife
-	// check ob nächstes Element dir oder was anderes ist (isDirectory)
-	// wenn was anderes rufe do_file auf || wenn dir rufe do_dir mit dem derzeitigen Element + counter um die Tiefe des Directorys zu wissen	
 	DIR * dir_object;
 	struct dirent * dir_element;
 	
@@ -208,7 +191,6 @@ void do_dir(const char * dir_name, const char * parms, int parms_length,const ch
     int errnum;
     
 	strcat(fullpath, "/");
-	//printf("fullPath: %s, dirname: %s\n", fullpath, dir_name);
     
 	if ((dir_object = opendir(dir_name)) == NULL) {
         
@@ -232,94 +214,67 @@ void do_dir(const char * dir_name, const char * parms, int parms_length,const ch
 		
 		free(tempStr);
 		
-        	//initialise i and reset i
-        	int i = 0;
+	
+		// IF  RETURN OF CHECK PARAM IS NOT 1 ==> * Returns 1 = no params in Stack
+		if(check_params_return != 1)
+		{
 
-        
-        	// IF  RETURN OF CHECK PARAM IS NOT 1 ==> * Returns 1 = no params in Stack
-        	if(check_params_return != 1)
-        	{
-    
-                yes_no print_it = NO;
-                yes_no is_filter = NO;
-				yes_no is_print_param = NO;
+			yes_no print_it = NO;
+			yes_no is_filter = NO;
+			yes_no is_print_param = NO;
+			yes_no default_ls = NO;
 
-                	for(i=0;i<=save_stackcount;i++)
-                    	{
-                            int help_return= do_params(dir_element->d_name, &print_it, &is_filter, &is_print_param);
-                            
-                            if(print_it == NO && is_print_param == NO){
-                                break;   
-                            }
-            
-                    	}
-                    	        	    
-                    //OVER-ALL-PRINT -> PRINT WENN EVERYTHING LOOKS GOOD
-                    if(print_it == YES)
-                    {
-                        fprintf(stdout, "%s%s\n", fullpath, dir_element->d_name);
-                    }
-        
-            		if(stack_count == 0)
-            		{
-            			check_params(parms_length, argv);
-            		}
-        
-        	}
-	        else
-        	{
-            		fprintf(stdout, "%s%s\n", fullpath, dir_element->d_name);
-        	}
-		
-		//MM: rekursives aufrufen der do_dir damit man in die directory reingehen kann:
-		//printf("which_location: %d\n", which_location(dir_element->d_name));
-        	if (which_location(dir_element->d_name) == 2) {
-            		if (strcmp(dir_element->d_name, ".") == 0 || strcmp(dir_element->d_name, "..") == 0)
-                		continue;
-				strcat(fullpath,dir_element->d_name);
-														
-				do_dir(fullpath, parms,parms_length,argv, check_params_return);
-										
+			for(int i=0;i<=save_stackcount;i++)
+				{
+					int help_return= do_params(dir_element->d_name, &print_it, &is_filter, &is_print_param, &default_ls);
+					
+					if(print_it == NO && is_print_param == NO){
+						break;   
+					}
+	
+				}
+								
+			//OVER-ALL-PRINT -> PRINT WENN EVERYTHING LOOKS GOOD
+			if(print_it == YES)
+			{
+				if(default_ls == YES){
+					ls_output(dir_element->d_name);
+				}else{
+					fprintf(stdout, "%s%s\n", fullpath, dir_element->d_name);
+				}
 			}
-    	}
+
+			if(stack_count == 0)
+			{
+				check_params(parms_length, argv);
+			}
+
+		}
+		else
+		{
+				fprintf(stdout, "%s%s\n", fullpath, dir_element->d_name);
+		}
+		
+		// if is directory then step into:
+		if (which_location(dir_element->d_name) == 2) {
+			if (strcmp(dir_element->d_name, ".") == 0 || strcmp(dir_element->d_name, "..") == 0)
+					continue;
+			strcat(fullpath,dir_element->d_name);
+													
+			do_dir(fullpath, parms,parms_length,argv, check_params_return);
+									
+		}
+    }
 	
 	fullpath[strlen(fullpath)-strlen(dir_name)-1] = '\0';
 		
 	closedir(dir_object);
 }
 
-// MM:
-/*
-void check_print(const char * file_name, const char * parms, int parms_length){
-	
-	// for schleife über stack
-	// check derzeitiges element vom stack (param_list->s_parameter) auf derzeitiges element (file_name)
-	// wenn stack ist gleich null 
-	
-    //GS: Question to MM :: WHY parms_length-2 and why start for() with i=ZERO  == ZERO == Name of Programm
-    for (int i = 0; i < parms_length-2; i++){
-		
-		//printf("Filename: %s, parms: %s\n", file_name, parms); // For TESTING
-		
-		if (strcmp(&parms[i], allowed_params[PRINT_PARAM]) == 0){
-				printf("%s\n", file_name);
-		}
-        else{
-            
-            
-            // IF OTHER PARAMS -- OK ==== > PRINT ---
-            
-            
-            
-            //Errorhandling corrected -- no errno is used because there is no errno code for this
-            fprintf(stderr, "myfind() - check_print(): Error: unknown parameter\n");
-		}
-	}
-}
-*/
 
 /**
- * check_params()
+ * check_params(int argc, const char * argv[])
+ *
  * Returns 0 = everything is OK
  * Returns 1 = no params in Stack
  * Returns 2 = location is not correct
@@ -483,6 +438,7 @@ int check_params(int argc, const char * argv[])
 
 /**
  *  which_location()
+ *
  *  return 1  -->   "ordinary file"
  *  return 2  -->   "directory"
  *  return 3  -->   "text orientated DEVICE"
@@ -527,7 +483,7 @@ int which_location(const char *locationName)
 
 
 /**
- *check_param_options(PARAMETER ARRAY,AKTIV PARAMETER)
+ * check_param_options(PARAMETER ARRAY,AKTIV PARAMETER)
  *
  * Returns 0 = everything OK
  * Returns 1 = param_option not allowed
@@ -783,9 +739,12 @@ int push(const char * param,const char * option)
     return 0;
 }
 
-//search_empty()
-// Returns NULL = NOT OK
-// Returns NOT NULL = OK == IF s_next_param == NULL
+/**
+ * search_empty (param_stack * start)
+ *
+ * Returns NULL = NOT OK
+ * Returns NOT NULL = OK == IF s_next_param == NULL
+ */
 param_stack * search_empty (param_stack * start)
 {
     
@@ -806,10 +765,12 @@ param_stack * search_empty (param_stack * start)
 }
 
 
-//pop ()
-// delete the first param in Stack => now the second Param is the first
-// return 0 = Everything OK
-// return 1 = Stack is Empty, No pop allowed
+/**
+ * pop ()
+ * delete the first param in Stack => now the second Param is the first
+ * return 0 = Everything OK
+ * return 1 = Stack is Empty, No pop allowed
+ */
 int pop ()
 {
     
@@ -835,16 +796,15 @@ int pop ()
 }
 
 
-
-
-//do_params()
-//
-// returns 0 == everything ok
-// returns 1 == print imediately because of -ls or -print
-// returns 2 == not print this line
-// returns 3 == Stack is Empty
-
-int do_params(char *file_or_dir_name, yes_no* print_it, yes_no* is_filter, yes_no* is_print_param)
+/**
+ * do_params(char *file_or_dir_name, yes_no* print_it, yes_no* is_filter, yes_no* is_print_param, yes_no* default_ls)
+ *
+ * returns 0 == everything ok
+ * returns 1 == print imediately because of -ls or -print
+ * returns 2 == not print this line
+ * returns 3 == Stack is Empty
+ */
+int do_params(char *file_or_dir_name, yes_no* print_it, yes_no* is_filter, yes_no* is_print_param, yes_no* default_ls)
 {
     
     
@@ -1047,40 +1007,11 @@ int do_params(char *file_or_dir_name, yes_no* print_it, yes_no* is_filter, yes_n
 			*print_it == NO;
 			*is_print_param = YES;
 			
-			struct stat sb;
-			char outputString;
-			struct tm *tmp;
-			char outstr[200];
-
-			stat(file_or_dir_name, &sb);
-					
-			struct passwd *pw = getpwuid(sb.st_uid);
-			struct group  *gr = getgrgid(sb.st_gid);
-			
-			tmp = localtime(&sb.st_mtime);
-			strftime(outstr, sizeof(outstr), "%b %d %H:%M", tmp);
-				
-			printf("%6ld %4lld %s%s%s%s%s%s%s%s%s%s %3lld %s %s %8ld %s %s%s\n", 
-				(long) sb.st_ino, 
-				(long long) sb.st_blocks / 2, 
-					(S_ISDIR(sb.st_mode)) ? "d" : "-", 
-					(sb.st_mode & S_IRUSR) ? "r" : "-",
-					(sb.st_mode & S_IWUSR) ? "w" : "-",
-					(sb.st_mode & S_IXUSR) ? "x" : "-",
-					(sb.st_mode & S_IRGRP) ? "r" : "-",
-					(sb.st_mode & S_IWGRP) ? "w" : "-",
-					(sb.st_mode & S_IXGRP) ? "x" : "-",
-					(sb.st_mode & S_IROTH) ? "r" : "-",
-					(sb.st_mode & S_IWOTH) ? "w" : "-",
-					(sb.st_mode & S_IXOTH) ? "x" : "-",
-				(long long) sb.st_nlink,
-				(pw != NULL) ? pw->pw_name : "-",
-				(gr != NULL) ? gr->gr_name : "-",
-				sb.st_size,
-				outstr,
-				fullpath, 
-				file_or_dir_name
-				);
+			ls_output(file_or_dir_name);
+		}
+		
+		if (param_list->s_next_param == NULL){
+			*default_ls = YES;
 		}
 		
 		*is_filter = NO;
@@ -1144,6 +1075,12 @@ int do_params(char *file_or_dir_name, yes_no* print_it, yes_no* is_filter, yes_n
     return 0;
 }
 
+
+/**
+ * check_next_param(yes_no* is_filter)
+ *
+ * no return value
+ */
 void check_next_param(yes_no* is_filter){
     if (param_list->s_next_param != NULL){
         if(strcmp(allowed_params[PRINT_PARAM], param_list->s_next_param->s_parameter) == 0 ||
@@ -1156,8 +1093,53 @@ void check_next_param(yes_no* is_filter){
 }
 
 
+/**
+ * ls_output(char *file_or_dir_name)
+ *
+ * no return value
+ */
+void ls_output(char *file_or_dir_name){
+	struct stat sb;
+	struct tm *tmp;
+	char outstr[200];
 
-void view_help(void)
+	stat(file_or_dir_name, &sb);
+			
+	struct passwd *pw = getpwuid(sb.st_uid);
+	struct group  *gr = getgrgid(sb.st_gid);
+	
+	tmp = localtime(&sb.st_mtime);
+	strftime(outstr, sizeof(outstr), "%b %d %H:%M", tmp);
+		
+	printf("%6ld %4lld %s%s%s%s%s%s%s%s%s%s %3lld %s %s %8ld %s %s%s\n", 
+		(long) sb.st_ino, 
+		(long long) sb.st_blocks / 2, 
+			(S_ISDIR(sb.st_mode)) ? "d" : "-", 
+			(sb.st_mode & S_IRUSR) ? "r" : "-",
+			(sb.st_mode & S_IWUSR) ? "w" : "-",
+			(sb.st_mode & S_IXUSR) ? "x" : "-",
+			(sb.st_mode & S_IRGRP) ? "r" : "-",
+			(sb.st_mode & S_IWGRP) ? "w" : "-",
+			(sb.st_mode & S_IXGRP) ? "x" : "-",
+			(sb.st_mode & S_IROTH) ? "r" : "-",
+			(sb.st_mode & S_IWOTH) ? "w" : "-",
+			(sb.st_mode & S_IXOTH) ? "x" : "-",
+		(long long) sb.st_nlink,
+		(pw != NULL) ? pw->pw_name : "-",
+		(gr != NULL) ? gr->gr_name : "-",
+		sb.st_size,
+		outstr,
+		fullpath, 
+		file_or_dir_name
+		);
+}
+
+/**
+ * view_help()
+ *
+ * no return value
+ */
+void view_help()
 {
     printf("\n###############-------------   HELP START  -------------###############");
     printf("\nmyfind <file or directory> [ <parameters> ] ...\n");
@@ -1173,9 +1155,6 @@ void view_help(void)
 
     
 }
-
-
-
 
 
 /*

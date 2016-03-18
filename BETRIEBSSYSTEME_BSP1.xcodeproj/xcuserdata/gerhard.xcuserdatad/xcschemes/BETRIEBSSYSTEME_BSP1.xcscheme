@@ -63,7 +63,7 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = ".  -type f"
+            argument = ".  -user root"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

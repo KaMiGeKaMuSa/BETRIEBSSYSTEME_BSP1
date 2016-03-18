@@ -38,7 +38,6 @@
 /*
  * --------------------------------------------------------------- defines --
  */
-#define DEBUGLEVEL 0
 
 //allowed_params[]
 #define NAME_PARAM 0
@@ -50,7 +49,7 @@
 #define PATH_PARAM 6
 
 
-//USED FOR WHICH LOCATION
+//MACRO USED FOR WHICH LOCATION
 # ifndef S_ISSOCK
 # define S_ISSOCK(mode) __S_ISTYPE((mode), __S_IFSOCK)
 # endif
@@ -355,9 +354,7 @@ int check_params(int argc, const char * argv[])
             if (strncmp("-", argv[i] , 1) == 0)
             {
                 
-                    //for() as log as allowed params found
-                    //numb_of_allowed_params - 1 -> because array starts with ZERO
-                    //ii = 1 because PARAM HELP should not listed behind
+                    //for() as long as allowed params found
                     for (ii=0; ii < numb_of_allowed_params; ii++)
                     {
             
@@ -612,6 +609,21 @@ int check_param_options(const char * argv[], int aktiv_param_index)
             
             //Returns 1 = param_option not OK
             return 1;
+        }
+        
+
+        // CHECK IF USERNAME EXIST
+        struct passwd *pwd = getpwnam(argv[aktiv_option]); /* don't free, see getpwnam() for details */
+                
+        if(pwd == NULL)
+        {
+                //Errorhandling corrected -- no errno is used because there is no errno code for this
+                fprintf(stderr, "\nmyfind() - check_param_options(): parameter %s USERNAME %s do not exist\n", argv[aktiv_param_index], argv[aktiv_option]);
+                
+                view_help();
+                
+                //Returns 1 = param_option not OK
+                return 1;
         }
         
         
@@ -967,14 +979,27 @@ int do_params(char *file_or_dir_name, yes_no* print_it, yes_no* is_filter, yes_n
     {
         check_next_param(is_filter);
         
+        struct stat buf;
+        
+        //USER Name to USER ID
+        struct passwd *pwd = getpwnam(param_list->s_option); /* don't free, see getpwnam() for details */
         
         
+        //IF USER NOT EXIST => IS CHECKED IN "CHECK_PARAM_OPTIONS()" => ERROR GIVEN AND EXIT!!
         
         
-        
-        
-        
-        
+        //FILE/DIR - USER_ID
+        if (stat((const char*)file_or_dir_name, &buf) != 0) { printf("%s Permission Denied \n",fullpath); return 2;};
+
+
+        //THEN COMPARE FILE_USER_ID WITH GIVEN USER_ID => WHEN NO DIFFERENCE => *print_it = YES ==> ELSE *print_it == NO
+            if(pwd->pw_uid == buf.st_uid) {
+                *print_it = YES; }
+            else {
+                *print_it = NO;
+                // returns 2 == not print this line
+                return 2; }
+
     }
     
 

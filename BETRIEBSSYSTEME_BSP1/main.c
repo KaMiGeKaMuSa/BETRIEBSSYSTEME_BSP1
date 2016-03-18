@@ -83,8 +83,6 @@ const char * allowed_params[]={"-name","-type", "-user", "-print", "-ls", "-nous
 char *fullpath = NULL;
 
 
-//var for Error Handling = errno
-extern int errno ;
 
 /*
  * ------------------------------------------------------------- functions --

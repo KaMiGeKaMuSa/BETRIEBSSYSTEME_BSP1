@@ -106,7 +106,7 @@ void view_help(void);
 ///Stackfunctions
 param_stack * search_empty (param_stack * param_list);
 int push(const char * param,const char * option);
-int pop();
+int pop(void);
 
 
 /*
@@ -225,7 +225,7 @@ void do_dir(const char * dir_name, const char * parms, int parms_length,const ch
 
 			for(int i=0;i<=save_stackcount;i++)
 				{
-					int help_return= do_params(dir_element->d_name, &print_it, &is_filter, &is_print_param, &default_ls);
+					do_params(dir_element->d_name, &print_it, &is_filter, &is_print_param, &default_ls);
 					
 					if(print_it == NO && is_print_param == NO){
 						break;   
@@ -783,7 +783,7 @@ param_stack * search_empty (param_stack * start)
  * return 0 = Everything OK
  * return 1 = Stack is Empty, No pop allowed
  */
-int pop ()
+int pop (void)
 {
     
     
@@ -1010,7 +1010,7 @@ int do_params(char *file_or_dir_name, yes_no* print_it, yes_no* is_filter, yes_n
         if (*is_filter == NO) { //do_params() returns 1 == print imediately because of -ls or -print
                                     
             //check if -print of -ls in stack, only print immediately if no -print/-ls found (like in real find)
-            *print_it == NO;
+            //*print_it == NO;
 			*is_print_param = YES;
             fprintf(stdout, "%s%s\n", fullpath, file_or_dir_name);
         }
@@ -1029,7 +1029,7 @@ int do_params(char *file_or_dir_name, yes_no* print_it, yes_no* is_filter, yes_n
     if(strcmp(allowed_params[LS_PARAM], param_list->s_parameter) == 0)
     {
 		if (*is_filter == NO) { 
-			*print_it == NO;
+			//*print_it == NO;
 			*is_print_param = YES;
 			
 			ls_output(file_or_dir_name);
